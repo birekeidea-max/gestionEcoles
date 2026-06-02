@@ -593,6 +593,70 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
       showInstantAlert('Nouveau bulletin enregistré avec succès !');
     }
 
+    // Auto-archive compiled image or SVG vector snapshot for Ministry inspections
+    try {
+      const studName = isManualInput 
+        ? manualStudentName.trim() 
+        : (students.find(s => s.id === studentId)?.fullName || "Élève Inconnu");
+
+      const svgCode = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800" viewBox="0 0 600 800" style="background:#ffffff;font-family:system-ui,sans-serif;">
+        <rect width="100%" height="100%" fill="#ffffff" stroke="#007FFF" stroke-width="12"/>
+        <rect x="20" y="20" width="560" height="760" fill="none" stroke="#F4D03F" stroke-width="4"/>
+        <text x="300" y="80" font-size="20" font-weight="900" fill="#007FFF" text-anchor="middle">REPUBLIQUE DEMOCRATIQUE DU CONGO</text>
+        <text x="300" y="105" font-size="13" font-weight="700" fill="#D32F2F" text-anchor="middle">MINISTERE DE L'EPST</text>
+        <text x="300" y="128" font-size="10" font-weight="bold" fill="#718096" text-anchor="middle">ARCHIVE OFFICIELLE NUMERISEE AUTOMATIQUEMENT</text>
+        
+        <line x1="80" y1="155" x2="520" y2="155" stroke="#E2E8F0" stroke-width="2"/>
+        
+        <text x="80" y="210" font-size="14" font-weight="bold" fill="#1A202C">Élève :</text>
+        <text x="180" y="210" font-size="15" font-weight="900" fill="#007FFF">${studName}</text>
+        
+        <text x="80" y="245" font-size="14" font-weight="bold" fill="#1A202C">Classe / Option :</text>
+        <text x="180" y="245" font-size="14" font-weight="bold" fill="#2D3748">${preparedBulletin.classLevel} - ${preparedBulletin.option}</text>
+        
+        <text x="300" y="325" font-size="18" font-weight="900" fill="#1A202C" text-anchor="middle">BULLETIN DE NOTES SCELLÉ</text>
+        <text x="300" y="350" font-size="12" font-weight="bold" fill="#4A5568" text-anchor="middle">Année Scolaire: ${preparedBulletin.academicYear}</text>
+        
+        <rect x="80" y="390" width="440" height="230" fill="#F8FAFC" stroke="#E2E8F0" rx="8"/>
+        
+        <text x="110" y="430" font-size="12" font-weight="bold" fill="#718096">Identifiant Sceau :</text>
+        <text x="270" y="430" font-size="12" font-weight="bold" font-family="monospace" fill="#1A202C">${preparedBulletin.id}</text>
+        
+        <text x="110" y="470" font-size="12" font-weight="bold" fill="#718096">Conduite de l'Éleve :</text>
+        <text x="270" y="470" font-size="12" font-weight="bold" fill="#1A202C">${preparedBulletin.conduct}</text>
+        
+        <text x="110" y="510" font-size="12" font-weight="bold" fill="#718096">Absences Signalées :</text>
+        <text x="270" y="510" font-size="12" font-weight="bold" fill="#1A202C">${preparedBulletin.daysAbsent} Jours</text>
+
+        <text x="110" y="550" font-size="12" font-weight="bold" fill="#718096">Statut de l'Archive :</text>
+        <text x="270" y="550" font-size="12" font-weight="900" fill="#10B981">ARCHIVÉ AUTOMATIQUEMENT</text>
+        
+        <text x="300" y="690" font-size="11" font-weight="bold" fill="#94A3B8" text-anchor="middle">Portail SGESC RDC - Ministère de l'EPST</text>
+        <text x="300" y="710" font-size="9" fill="#94A3B8" text-anchor="middle">Empreinte de validation : ${preparedBulletin.id.slice(-8).toUpperCase()}</text>
+      </svg>`;
+
+      const dataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgCode)));
+
+      const autoFile: ArchivedFile = {
+        id: `FILE-ARCHIVE-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        schoolId: formSchoolId,
+        fileName: `bulletin_${studName.replace(/\s+/g, '_').toLowerCase()}_${preparedBulletin.id.slice(-4)}.png`,
+        fileType: 'image/png',
+        savedDate: new Date().toLocaleString('fr-CD'),
+        studentName: studName,
+        studentId: preparedBulletin.studentId,
+        classLevel: preparedBulletin.classLevel,
+        option: preparedBulletin.option,
+        imageData: dataUrl
+      };
+
+      if (onSaveArchivedFile) {
+        onSaveArchivedFile(autoFile);
+      }
+    } catch (e) {
+      console.error("Auto Archive failed", e);
+    }
+
     setIsFormOpen(false);
     setActiveBulletin(preparedBulletin);
   };

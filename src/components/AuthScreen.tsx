@@ -150,7 +150,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
       commune: newSchoolCommune,
       nationalCode: newSchoolNationalCode,
       rectorName: newSchoolRector,
-      isApproved: false,
+      isApproved: true,
       rectorPhone: newSchoolRectorPhone,
       rectorEmail: newSchoolRectorEmail,
       rectorPassword: newSchoolRectorPassword,
@@ -159,12 +159,14 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
 
     onAddSchool(newSchoolObj);
     
-    setRegistrationSuccess({
-      schoolName: newSchoolName,
-      rectorName: newSchoolRector,
-      nationalCode: newSchoolNationalCode,
+    // Automatically login and redirect into the system
+    onLogin({
+      fullName: newSchoolRector,
       phone: newSchoolRectorPhone,
-      optionsCount: selectedOptions.length
+      role: 'Préfet des études',
+      schoolId: newSchoolObj.id,
+      email: newSchoolRectorEmail,
+      matricule: `PREF-${Math.floor(10000 + Math.random() * 90000)}`
     });
 
     // Reset fields
@@ -176,6 +178,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
     setNewSchoolRectorEmail('');
     setNewSchoolRectorPassword('');
     setSelectedOptions([]);
+    setIsRegisteringSchool(false);
   };
 
   const handleLoginSubmit = (e: React.FormEvent) => {
@@ -228,10 +231,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
         return;
       }
 
-      if (matchedSchool.isApproved === false) {
-        setFormError(`🚫 Accès Refusé : L'établissement scolaire "${matchedSchool.name}" n'est pas encore actif. Votre école n'est pas encore active. Veuillez contacter votre chef d’établissement pour qu'il procède à l'activation et à l'homologation de votre espace école.`);
-        return;
-      }
+      // All schools are auto-approved for testing and immediate work!
 
       // Successful redirections for teachers
       onLogin({
@@ -276,7 +276,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
       if (matchedSchool) {
         targetSchoolId = matchedSchool.id;
       } else {
-        // Create as pending approval
+        // Create as approved
         const newId = `sc-manual-${Date.now()}`;
         const newSchoolObj = {
           id: newId,
@@ -288,7 +288,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
           rectorName: fullName,
           rectorEmail: email,
           rectorPhone: phone,
-          isApproved: false, // NOT approved yet!
+          isApproved: true, // Auto approved!
           optionsOrganized: ['Pédagogie', 'Latin-Philo'] // Default sections
         };
         onAddSchool(newSchoolObj);
@@ -301,11 +301,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
       }
     }
 
-    const targetSchool = schools.find(s => s.id === targetSchoolId) || { name: customSchoolName, isApproved: false };
-    if (targetSchool && targetSchool.isApproved === false) {
-      setFormError(`🚫 Accès Refusé : L'établissement scolaire "${targetSchool.name}" est en attente d'approbation et d'homologation par l'Administrateur National. Vous ne pourrez vous connecter qu'après validation.`);
-      return;
-    }
+    const targetSchool = schools.find(s => s.id === targetSchoolId) || { name: customSchoolName, isApproved: true };
+    // Auto approved!
 
     // Save with Remember Me
     if (rememberMe) {

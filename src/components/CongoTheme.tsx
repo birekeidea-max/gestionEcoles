@@ -191,24 +191,24 @@ export const CongoMapOutline: React.FC<{ className?: string; opacityClassName?: 
 
 export const PatrioticBackground: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
-    <div className="relative min-h-screen bg-slate-50 overflow-hidden">
-      {/* Sky Blue top edge gradient reflecting the Flag */}
-      <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#007FFF] via-[#F4D03F] to-[#D32F2F] z-50 animate-pulse" />
+    <div className="relative min-h-screen bg-slate-50 text-slate-900 overflow-hidden">
+      {/* Sky Blue top edge gradient reflecting the Flag of DRC */}
+      <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-[#007FFF] via-[#F4D03F] to-[#D32F2F] z-50 animate-pulse" />
       
       {/* Background elements */}
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
         {/* Giant Map outline bottom right */}
-        <div className="absolute -bottom-16 -right-16 md:-bottom-8 md:-right-8">
-          <CongoMapOutline className="w-[30rem] h-[30rem] md:w-[48rem] md:h-[48rem]" opacityClassName="opacity-[0.05]" />
+        <div className="absolute -bottom-16 -right-16 md:-bottom-8 md:-right-8 opacity-45">
+          <CongoMapOutline className="w-[30rem] h-[30rem] md:w-[48rem] md:h-[48rem]" opacityClassName="opacity-[0.06]" />
         </div>
         
         {/* Giant Coat of arms inside the background center left */}
-        <div className="absolute top-1/4 -left-12 opacity-15 blur-0">
-          <CongoCoatOfArms className="w-80 h-80" opacityClassName="opacity-[0.12]" />
+        <div className="absolute top-1/4 -left-12 opacity-15">
+          <CongoCoatOfArms className="w-80 h-80" opacityClassName="opacity-[0.15]" />
         </div>
 
         {/* Faint color bands resembling the DRC Flag diagonally spanning screen */}
-        <div className="absolute inset-0 opacity-[0.02]">
+        <div className="absolute inset-0 opacity-[0.03]">
           <div className="absolute -top-[50%] -left-[20%] w-[150%] h-[200%] bg-gradient-to-bl from-[#007FFF]/20 via-[#F4D03F]/20 to-[#D32F2F]/20 transform -rotate-12" />
         </div>
       </div>
