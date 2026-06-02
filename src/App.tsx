@@ -78,11 +78,11 @@ export default function App() {
     const local = localStorage.getItem('sgesc_all_users');
     if (local) return JSON.parse(local);
     return [
-      { fullName: "Prof. Kabose Augustin", phone: "+243 812 345 678", role: "Enseignant", schoolId: "sc-1", email: "", timestamp: "25/05/2026 09:12:00" },
-      { fullName: "Mme. Jolie Masengo", phone: "+243 998 765 432", role: "Comptable", schoolId: "sc-1", email: "", timestamp: "26/05/2026 10:44:02" },
-      { fullName: "Monsieur l'Abbé Pierre Lwamba", phone: "+243 854 321 098", role: "Préfet des études", schoolId: "sc-2", email: "", timestamp: "27/05/2026 11:21:50" },
-      { fullName: "Sœur Jeanne d'Arc Mapasa", phone: "+243 897 654 321", role: "Directeur", schoolId: "sc-3", email: "", timestamp: "28/05/2026 07:15:22" },
-      { fullName: "Chef d'Antenne National", phone: "Superviseur RDC", role: "Administrateur", schoolId: "sc-1", email: "birekeidea@gmail.com", timestamp: "28/05/2026 08:00:00" }
+      { fullName: "Prof. Kabose Augustin", phone: "+243 812 345 678", role: "Enseignant", schoolId: "sc-1", email: "", timestamp: "25/05/2026 09:12:00", isOnline: true },
+      { fullName: "Mme. Jolie Masengo", phone: "+243 998 765 432", role: "Comptable", schoolId: "sc-1", email: "", timestamp: "26/05/2026 10:44:02", isOnline: false },
+      { fullName: "Monsieur l'Abbé Pierre Lwamba", phone: "+243 854 321 098", role: "Préfet des études", schoolId: "sc-2", email: "", timestamp: "27/05/2026 11:21:50", isOnline: true },
+      { fullName: "Sœur Jeanne d'Arc Mapasa", phone: "+243 897 654 321", role: "Directeur", schoolId: "sc-3", email: "", timestamp: "28/05/2026 07:15:22", isOnline: true },
+      { fullName: "Chef d'Antenne National", phone: "Superviseur RDC", role: "Administrateur", schoolId: "sc-1", email: "birekeidea@gmail.com", timestamp: "28/05/2026 08:00:00", isOnline: true }
     ];
   });
 
@@ -160,18 +160,31 @@ export default function App() {
 
     // Register the user to tracked database
     setAllUsers(prev => {
-      const emailMatches = userData.email && prev.some(u => u.email === userData.email);
-      const phoneMatches = userData.phone && prev.some(u => u.phone === userData.phone);
-      const nameMatches = prev.some(u => u.fullName.toLowerCase() === userData.fullName.toLowerCase());
+      const emailIx = userData.email ? prev.findIndex(u => u.email === userData.email) : -1;
+      const phoneIx = userData.phone ? prev.findIndex(u => u.phone === userData.phone) : -1;
+      const nameIx = prev.findIndex(u => u.fullName.toLowerCase() === userData.fullName.toLowerCase());
+      
+      const matchIx = emailIx !== -1 ? emailIx : (phoneIx !== -1 ? phoneIx : nameIx);
 
-      if (!emailMatches && !phoneMatches && !nameMatches) {
+      if (matchIx === -1) {
         const loggedUser: User = {
           ...userData,
-          timestamp: new Date().toLocaleString('fr-CD')
+          timestamp: new Date().toLocaleString('fr-CD'),
+          isOnline: true
         };
         return [loggedUser, ...prev];
+      } else {
+        return prev.map((u, idx) => {
+          if (idx === matchIx) {
+            return {
+              ...u,
+              isOnline: true,
+              timestamp: new Date().toLocaleString('fr-CD')
+            };
+          }
+          return u;
+        });
       }
-      return prev;
     });
 
     setActiveTab('HOME');

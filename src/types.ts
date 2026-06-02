@@ -20,6 +20,7 @@ export interface User {
   email?: string;
   timestamp?: string;
   matricule?: string;
+  isOnline?: boolean;
 }
 
 export type SchoolOption =

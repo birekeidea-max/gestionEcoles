@@ -37,6 +37,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
   const [pendingLoginUserData, setPendingLoginUserData] = useState<any | null>(null);
   const [twoFAError, setTwoFAError] = useState('');
 
+  // 2-Step Secret DB Password states
+  const [isVerifyingDatabaseSecret, setIsVerifyingDatabaseSecret] = useState(false);
+  const [databaseSecretInput, setDatabaseSecretInput] = useState('');
+  const [databaseSecretError, setDatabaseSecretError] = useState('');
+
   const trigger2FA = (userData: { fullName: string; phone: string; role: UserRole; schoolId: string; email?: string }) => {
     const code = String(Math.floor(100000 + Math.random() * 900000));
     setGenerated2FACode(code);
@@ -218,13 +223,16 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
         setFormError('Mot de passe ou email d’administrateur général invalide.');
         return;
       }
-      trigger2FA({
+      setPendingLoginUserData({
         fullName: 'Bireke Idea',
         phone: 'Administrateur Général',
         role: 'Administrateur',
         schoolId: 'all',
         email: 'birekeidea@gmail.com'
       });
+      setIsVerifyingDatabaseSecret(true);
+      setDatabaseSecretInput('');
+      setDatabaseSecretError('');
       return;
     }
 
@@ -253,7 +261,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
       );
 
       if (!matchedSchool) {
-        setFormError("⚠️ Aucun établissement homologué trouvé avec le matricule ou le nom fourni. Votre établissement d'enseignement secondaire doit être préalablement créé et validé. Veuillez contacter votre chef d’établissement pour qu’il soumette le dossier de création d'espace école.");
+        setFormError("⚠️ Votre école n'est pas répertoriée dans la base centrale. Prière de demander au chef d'établissement (Préfet) de créer/enregistrer l'espace école d'abord.");
         return;
       }
 
@@ -358,6 +366,91 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
       matricule
     });
   };
+
+  if (isVerifyingDatabaseSecret) {
+    return (
+      <div className="min-h-screen flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8 relative bg-slate-950 z-[200] font-sans animate-in fade-in duration-200">
+        <div className="absolute inset-x-0 top-0 h-2 bg-gradient-to-r from-[#D32F2F] via-yellow-400 to-[#D32F2F] animate-pulse" />
+        <div className="absolute top-10 left-10 hidden lg:block opacity-10">
+          <CongoCoatOfArms className="w-56 h-56" opacityClassName="opacity-80" />
+        </div>
+        
+        <div className="max-w-md w-full space-y-6 bg-slate-900 border border-slate-800 text-white px-8 py-10 rounded-3xl shadow-2xl relative z-10 text-center">
+          <div className="flex justify-center mb-4">
+            <span className="relative inline-block p-4 bg-red-650/10 border border-red-500/20 rounded-full text-red-500 animate-pulse">
+              <ShieldCheck className="w-12 h-12 text-[#D32F2F]" />
+              <span className="absolute top-2 right-2 flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 animate-infinite"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+              </span>
+            </span>
+          </div>
+
+          <div className="space-y-1.5">
+            <h2 className="text-xs font-mono tracking-widest text-[#F4D03F] block uppercase font-black">
+              🛡️ DOUBLE AUTHENTIFICATION DE LA BASE CENTRALE
+            </h2>
+            <h3 className="text-xl font-extrabold text-slate-100 uppercase tracking-tight">
+              Mot de passe Secret de la Base Centrale
+            </h3>
+            <p className="text-[11.5px] text-slate-400 max-w-xs mx-auto leading-relaxed">
+              Pour des raisons absolues d'intégrité de la Base de Données Administrative Centrale, veuillez saisir le mot de passe secret pour déconnecter ou débloquer le répertoire national.
+            </p>
+          </div>
+
+          {databaseSecretError && (
+            <p className="text-xs text-red-400 bg-red-950/40 p-2.5 rounded-xl border border-red-900/30 text-center font-bold">
+              {databaseSecretError}
+            </p>
+          )}
+
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            if (databaseSecretInput.trim() === '012000') {
+              onLogin(pendingLoginUserData);
+              setIsVerifyingDatabaseSecret(false);
+            } else {
+              setDatabaseSecretError("❌ Mot de passe secret de la base de données centrale invalide.");
+            }
+          }} className="space-y-4">
+            <div>
+              <label className="block text-[11px] text-slate-400 uppercase tracking-widest font-mono text-left mb-1.5 font-bold">
+                Entrez le mot de passe secret de la base *
+              </label>
+              <input
+                type="password"
+                required
+                placeholder="Saisissez la clé d'administration"
+                value={databaseSecretInput}
+                onChange={(e) => setDatabaseSecretInput(e.target.value)}
+                className="w-full text-center text-xl font-mono tracking-widest font-extrabold rounded-xl border border-slate-700 bg-slate-950 py-3 text-red-500 shadow-inner focus:outline-hidden focus:border-[#D32F2F] focus:ring-1 focus:ring-[#D32F2F] placeholder-slate-800"
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setIsVerifyingDatabaseSecret(false)}
+                className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-xl text-xs font-bold border border-slate-700 cursor-pointer transition-colors uppercase font-mono"
+              >
+                Annuler
+              </button>
+              <button
+                type="submit"
+                className="flex-1 py-3 bg-[#D32F2F] hover:bg-[#B71C1C] text-white rounded-xl text-xs font-black shadow-md cursor-pointer transition-all uppercase font-mono tracking-wider animate-pulse"
+              >
+                Accéder à la Base
+              </button>
+            </div>
+          </form>
+
+          <p className="text-[9.5px] text-slate-500 font-mono">
+            ID de session administrative : RDC-CENTRAL-DB-SECURE
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (isVerifying2FA) {
     return (
@@ -1316,13 +1409,17 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
                   if (emailTrimmed === 'birekeidea@gmail.com' || emailTrimmed === 'birekeidea@gmail') {
                     setGoogleStep('SUCCESS');
                     setTimeout(() => {
-                      trigger2FA({
+                      setPendingLoginUserData({
                         fullName: 'Bireke Idea',
                         phone: 'Administrateur Général',
                         role: 'Administrateur',
                         schoolId: 'all',
                         email: 'birekeidea@gmail.com'
                       });
+                      setIsVerifyingDatabaseSecret(true);
+                      setDatabaseSecretInput('');
+                      setDatabaseSecretError('');
+                      setGoogleModalOpen(false);
                     }, 1700);
                   } else {
                     setGoogleStep('DENIED');
@@ -1440,13 +1537,17 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
                 const passNorm = directPassword.trim();
                 
                 if ((emailNorm === 'birekeidea@gmail.com' || emailNorm === 'birekeidea@gmail') && passNorm === 'b012000b') {
-                  trigger2FA({
+                  setPendingLoginUserData({
                     fullName: 'Bireke Idea',
                     phone: 'Administrateur Général',
                     role: 'Administrateur',
                     schoolId: 'all',
                     email: 'birekeidea@gmail.com'
                   });
+                  setIsVerifyingDatabaseSecret(true);
+                  setDatabaseSecretInput('');
+                  setDatabaseSecretError('');
+                  setEmailModalOpen(false);
                 } else {
                   setModalError("🚫 Accès Refusé : Mail Administratif ou Mot de passe de Sécurité incorrect.");
                 }

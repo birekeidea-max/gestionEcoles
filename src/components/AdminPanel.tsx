@@ -965,6 +965,81 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             </div>
           </div>
 
+          {/* 🟢 PANEL LIVE DES IDENTITÉS CONNECTÉES */}
+          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5 space-y-3.5 shadow-3xs">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+              <div className="flex items-center gap-3">
+                <span className="relative flex h-3.5 w-3.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#D32F2F] opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500"></span>
+                </span>
+                <div>
+                  <h4 className="text-xs font-black text-emerald-950 uppercase tracking-widest font-mono flex items-center gap-1.5">
+                    📟 IDENTITÉS DES PERSONNES CONNECTÉES EN DIRECT SUR LA PLATEFORME (LIVE SESSIONS)
+                  </h4>
+                  <p className="text-[11px] text-emerald-700 font-medium">
+                    Suivi instantané des sessions de travail actives des inspecteurs, directeurs, préfets, enseignants et comptables connectés sur le portail d'administration centrale.
+                  </p>
+                </div>
+              </div>
+              <div className="bg-white border border-emerald-250 px-3 py-1 rounded-lg font-mono text-[10px] font-black text-emerald-900 shadow-3xs flex items-center gap-1.5 shrink-0 self-start sm:self-center">
+                <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                👤 {allUsers.filter(u => u.isOnline).length} UTILISATEUR(S) EN LIGNE
+              </div>
+            </div>
+
+            <div className="overflow-x-auto bg-white rounded-xl border border-emerald-100 shadow-3xs">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-emerald-100 text-[10px] font-black tracking-wider uppercase font-mono text-emerald-950">
+                    <th className="py-2.5 px-4">Identité de l'agent</th>
+                    <th className="py-2.5 px-4">Fonction / Rôle</th>
+                    <th className="py-2.5 px-4">Établissement rattaché</th>
+                    <th className="py-2.5 px-4">Dernière activité enregistrée</th>
+                    <th className="py-2.5 px-4 text-center">Canal de transmission</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-emerald-50 text-xs">
+                  {allUsers.filter(u => u.isOnline).length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-6 text-center text-slate-400 font-medium bg-slate-50/50">
+                        Aucun autre utilisateur n'est connecté en ce moment sur la plateforme.
+                      </td>
+                    </tr>
+                  ) : (
+                    allUsers.filter(u => u.isOnline).map((usr, uIdx) => {
+                      const affSchool = schools.find(s => s.id === usr.schoolId);
+                      return (
+                        <tr key={uIdx} className="hover:bg-emerald-50/15 transition-colors">
+                          <td className="py-3 px-4">
+                            <span className="font-extrabold text-slate-850 block">{usr.fullName}</span>
+                            {usr.phone && <span className="text-[10px] font-mono text-slate-400 block">{usr.phone}</span>}
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="inline-block px-2.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-emerald-50 border border-emerald-100 text-emerald-805">
+                              {usr.role}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-xs font-bold text-slate-700">
+                            {affSchool ? affSchool.name : 'Secrétariat Général de l\'EPST (Global)'}
+                          </td>
+                          <td className="py-3 px-4 text-[10.5px] font-mono text-slate-500">
+                            🟢 Actif CD : {usr.timestamp || 'Initialisé'}
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <span className="inline-flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-250 text-emerald-700 font-mono animate-pulse">
+                              <span>●</span> LIVE SECURE
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
           {(isAddingUser || editingUserIndex !== null) && (
             <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
               <div className="flex justify-between items-center border-b border-slate-200 pb-3">
@@ -1068,13 +1143,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     <th className="py-3 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider font-mono">Contrôle d'accès / Fonction</th>
                     <th className="py-3 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider font-mono">Etablissement assigné</th>
                     <th className="py-3 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider font-mono">Enregistrement (Date CD)</th>
+                    <th className="py-3 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider font-mono text-center">Statut Connexion</th>
                     <th className="py-3 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider font-mono text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs">
                   {filteredUsers.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="py-8 text-center text-slate-400 font-medium font-sans">
+                      <td colSpan={6} className="py-8 text-center text-slate-400 font-medium font-sans">
                         Zéro agent trouvé correspondant aux filtres.
                       </td>
                     </tr>
@@ -1110,6 +1186,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                           </td>
                           <td className="py-3.5 px-4 font-mono text-[10px] text-slate-450">
                             {usr.timestamp || 'Généré par seed par défaut'}
+                          </td>
+                          <td className="py-3.5 px-4 text-center">
+                            {usr.isOnline ? (
+                              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-250 animate-pulse font-mono">
+                                <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                CONNECTÉ
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-medium bg-slate-100 text-slate-500 border border-slate-200 font-mono">
+                                <span className="inline-block w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                HORS LIGNE
+                              </span>
+                            )}
                           </td>
                           <td className="py-3.5 px-4 text-center">
                             <div className="flex items-center justify-center gap-1.5">
