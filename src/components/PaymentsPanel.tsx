@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import html2canvas from 'html2canvas';
 import { Payment, Student, School, SchoolClassLevel, SchoolOption } from '../types';
 import { downloadElementAsPDF, convertModernColorsToRgb } from '../utils/pdfGenerator';
@@ -26,6 +26,7 @@ export const PaymentsPanel: React.FC<PaymentsPanelProps> = ({
   const [activeReceipt, setActiveReceipt] = useState<Payment | null>(null);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [isDownloadingImage, setIsDownloadingImage] = useState(false);
+  const [shouldAutoDownload, setShouldAutoDownload] = useState(false);
   const [alertMsg, setAlertMsg] = useState('');
 
   const showInstantAlert = (text: string) => {
@@ -37,7 +38,7 @@ export const PaymentsPanel: React.FC<PaymentsPanelProps> = ({
 
   // Form states
   const [studentNameInput, setStudentNameInput] = useState('');
-  const [classLevelInput, setClassLevelInput] = useState<SchoolClassLevel>('1ère Année');
+  const [classLevelInput, setClassLevelInput] = useState<SchoolClassLevel>('7ème EB');
   const [optionInput, setOptionInput] = useState<SchoolOption>('Pédagogie');
   const [amount, setAmount] = useState<number>(15); // Standard monthly fee
   const [currency, setCurrency] = useState<'USD' | 'CDF'>('USD');
@@ -99,6 +100,7 @@ export const PaymentsPanel: React.FC<PaymentsPanelProps> = ({
     onAddPayment(newPayment);
     setShowPayModal(false);
     setActiveReceipt(newPayment); // Open generated receipt
+    setShouldAutoDownload(true); // Auto download image of receipt!
 
     // Reset properties
     setStudentNameInput('');
@@ -214,6 +216,17 @@ export const PaymentsPanel: React.FC<PaymentsPanelProps> = ({
       setIsDownloadingImage(false);
     }
   };
+
+  useEffect(() => {
+    if (activeReceipt && shouldAutoDownload) {
+      setShouldAutoDownload(false);
+      // Wait for receipt element to be rendered clearly in the DOM
+      const timer = setTimeout(() => {
+        downloadReceiptAsImage();
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [activeReceipt, shouldAutoDownload]);
 
   // Convert USD <-> CDF mock rates (1 USD = 2800 CDF for realistic congolese calculations)
   const USD_TO_CDF = 2800;

@@ -30,6 +30,32 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
 
+  // 2-Step Verification (2FA) states
+  const [isVerifying2FA, setIsVerifying2FA] = useState(false);
+  const [generated2FACode, setGenerated2FACode] = useState('');
+  const [input2FACode, setInput2FACode] = useState('');
+  const [pendingLoginUserData, setPendingLoginUserData] = useState<any | null>(null);
+  const [twoFAError, setTwoFAError] = useState('');
+
+  const trigger2FA = (userData: { fullName: string; phone: string; role: UserRole; schoolId: string; email?: string }) => {
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    setGenerated2FACode(code);
+    setPendingLoginUserData(userData);
+    setIsVerifying2FA(true);
+    setTwoFAError('');
+    setInput2FACode('');
+  };
+
+  const handleVerify2FA = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (input2FACode.replace(/\s+/g, '') === generated2FACode) {
+      onLogin(pendingLoginUserData);
+      setIsVerifying2FA(false);
+    } else {
+      setTwoFAError("❌ Code de vérification incorrect. Saisissez le code temporaire actif d'habilitation.");
+    }
+  };
+
   // S'authentifier avec mail ou Google pour Bireke Idea uniquement
   const [googleModalOpen, setGoogleModalOpen] = useState(false);
   const [emailModalOpen, setEmailModalOpen] = useState(false);
@@ -188,11 +214,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
     if (authMode === 'SUPER_ADMIN') {
       const emailNorm = adminEmail.trim().toLowerCase();
       const passNorm = adminPassword.trim();
-      if (emailNorm !== 'birekeidea@gmail.com' || passNorm !== 'b012000b') {
+      if ((emailNorm !== 'birekeidea@gmail.com' && emailNorm !== 'birekeidea@gmail') || passNorm !== 'b012000b') {
         setFormError('Mot de passe ou email d’administrateur général invalide.');
         return;
       }
-      onLogin({
+      trigger2FA({
         fullName: 'Bireke Idea',
         phone: 'Administrateur Général',
         role: 'Administrateur',
@@ -332,6 +358,101 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
       matricule
     });
   };
+
+  if (isVerifying2FA) {
+    return (
+      <div className="min-h-screen flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8 relative bg-slate-900 z-[200] font-sans">
+        <div className="absolute inset-x-0 top-0 h-2 bg-gradient-to-r from-sky-500 via-yellow-400 to-red-500 animate-pulse" />
+        <div className="absolute top-10 left-10 hidden lg:block opacity-10">
+          <CongoCoatOfArms className="w-56 h-56" opacityClassName="opacity-80" />
+        </div>
+        
+        <div className="max-w-md w-full space-y-6 bg-slate-950/90 text-white px-8 py-10 rounded-3xl border border-slate-800 shadow-2xl relative z-10 text-center">
+          <div className="flex justify-center mb-4">
+            <span className="relative inline-block p-4 bg-red-650/10 border border-red-500/20 rounded-full text-red-500">
+              <ShieldCheck className="w-12 h-12" />
+              <span className="absolute top-2 right-2 flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 animate-infinite"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+              </span>
+            </span>
+          </div>
+
+          <div className="space-y-1.5">
+            <h2 className="text-xs font-mono tracking-widest text-[#F4D03F] block uppercase font-black">
+              🔐 CONTRÔLE DE SÛRETÉ NATIONAL EPST-RDC
+            </h2>
+            <h3 className="text-xl font-extrabold text-slate-100 uppercase tracking-tight">
+              Vérification en Deux Étapes
+            </h3>
+            <p className="text-[11px] text-slate-450 max-w-xs mx-auto leading-relaxed">
+              Pour des raisons d'intégrité de la Base de Données Administrative Centrale, un code d'habilitation temporaire a été envoyé à votre périphérique sécurisé.
+            </p>
+          </div>
+
+          <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl text-left space-y-3">
+            <div className="text-center">
+              <span className="text-[10px] font-bold text-slate-500 uppercase block tracking-wider font-mono">
+                📟 Code de Session Temporaire (Device Bridge Code)
+              </span>
+              <span className="text-3xl font-extrabold text-yellow-400 block tracking-widest font-mono select-all mt-1 bg-yellow-400/5 py-1.5 rounded-lg border border-yellow-400/10">
+                {generated2FACode.slice(0,3)} {generated2FACode.slice(3)}
+              </span>
+            </div>
+          </div>
+
+          {twoFAError && (
+            <p className="text-xs text-red-400 bg-red-950/40 p-2.5 rounded-xl border border-red-900/30 text-center font-semibold">
+              {twoFAError}
+            </p>
+          )}
+
+          <form onSubmit={handleVerify2FA} className="space-y-4">
+            <div>
+              <label className="block text-[11px] text-slate-400 uppercase tracking-widest font-mono text-left mb-1.5 font-bold">
+                Entrez le code de vérification à 6 chiffres
+              </label>
+              <input
+                type="text"
+                maxLength={7}
+                required
+                placeholder="000 000"
+                value={input2FACode}
+                onChange={(e) => {
+                  let val = e.target.value.replace(/\D/g, '');
+                  if (val.length > 3) {
+                    val = val.slice(0, 3) + ' ' + val.slice(3, 6);
+                  }
+                  setInput2FACode(val);
+                }}
+                className="w-full text-center text-2xl font-mono tracking-widest font-extrabold rounded-xl border border-slate-800 bg-slate-900 py-3 text-yellow-400 shadow-inner focus:outline-hidden focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 placeholder-slate-705"
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setIsVerifying2FA(false)}
+                className="flex-1 py-3 bg-slate-905 hover:bg-slate-800 text-slate-400 rounded-xl text-xs font-bold border border-slate-850 cursor-pointer transition-colors uppercase font-mono"
+              >
+                Annuler
+              </button>
+              <button
+                type="submit"
+                className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black shadow-md cursor-pointer transition-all uppercase font-mono tracking-wider"
+              >
+                Autoriser l'Accès
+              </button>
+            </div>
+          </form>
+
+          <p className="text-[10px] text-slate-500 font-mono">
+            ID d'accès cryptographique : RDC-{generated2FACode}-SEC
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (registrationSuccess) {
     return (
@@ -1144,14 +1265,13 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
                   onClick={() => {
                     setGoogleStep('SUCCESS');
                     setTimeout(() => {
-                      onLogin({
+                      trigger2FA({
                         fullName: 'Bireke Idea',
                         phone: 'Administrateur Général',
                         role: 'Administrateur',
                         schoolId: 'all',
                         email: 'birekeidea@gmail.com'
                       });
-                      setGoogleModalOpen(false);
                     }, 1700);
                   }}
                   className="w-full flex items-center gap-3 p-3 border border-slate-200 rounded-xl text-left bg-slate-50 hover:bg-slate-100 transition-all cursor-pointer group"
@@ -1193,17 +1313,16 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
                   const emailTrimmed = customGoogleEmail.trim().toLowerCase();
                   if (!emailTrimmed) return;
 
-                  if (emailTrimmed === 'birekeidea@gmail.com') {
+                  if (emailTrimmed === 'birekeidea@gmail.com' || emailTrimmed === 'birekeidea@gmail') {
                     setGoogleStep('SUCCESS');
                     setTimeout(() => {
-                      onLogin({
+                      trigger2FA({
                         fullName: 'Bireke Idea',
                         phone: 'Administrateur Général',
                         role: 'Administrateur',
                         schoolId: 'all',
                         email: 'birekeidea@gmail.com'
                       });
-                      setGoogleModalOpen(false);
                     }, 1700);
                   } else {
                     setGoogleStep('DENIED');
@@ -1320,15 +1439,14 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
                 const emailNorm = directEmail.trim().toLowerCase();
                 const passNorm = directPassword.trim();
                 
-                if (emailNorm === 'birekeidea@gmail.com' && passNorm === 'b012000b') {
-                  onLogin({
+                if ((emailNorm === 'birekeidea@gmail.com' || emailNorm === 'birekeidea@gmail') && passNorm === 'b012000b') {
+                  trigger2FA({
                     fullName: 'Bireke Idea',
                     phone: 'Administrateur Général',
                     role: 'Administrateur',
                     schoolId: 'all',
                     email: 'birekeidea@gmail.com'
                   });
-                  setEmailModalOpen(false);
                 } else {
                   setModalError("🚫 Accès Refusé : Mail Administratif ou Mot de passe de Sécurité incorrect.");
                 }

@@ -192,7 +192,7 @@ export default function App() {
   };
 
   const currentSchool = schools.find(s => s.id === activeSchoolId) || schools[0] || INITIAL_SCHOOLS[0];
-  const isSuperAdmin = currentUser?.email === 'birekeidea@gmail.com';
+  const isSuperAdmin = currentUser?.email === 'birekeidea@gmail.com' || currentUser?.email === 'birekeidea@gmail';
 
   // Global Workspace statistics computed dynamically from records matching the active school identifier
   const schoolStudents = students.filter(s => s.schoolId === currentSchool.id);
@@ -422,108 +422,110 @@ export default function App() {
                 </div>
 
                 {/* 📊 TABLEAU COMPATIF NATIONAL DES ÉTABLISSEMENTS DE LA BASE DE DONNÉES */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden animate-fade-in">
-                  <div className="bg-gradient-to-r from-indigo-950 to-slate-900 px-5 py-4 text-white flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                    <div>
-                      <h3 className="text-sm font-black uppercase tracking-wider flex items-center gap-2 font-sans text-white">
-                        <span>📊</span> Tableau Récapitulatif des Établissements (Base de Données EPST)
-                      </h3>
-                      <p className="text-[11px] text-sky-200/90 font-medium">
-                        Suivi des effectifs, frais écolages, et bulletins sauvegardés avec archivage automatique.
-                      </p>
+                {isSuperAdmin && (
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden animate-fade-in">
+                    <div className="bg-gradient-to-r from-indigo-950 to-slate-900 px-5 py-4 text-white flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                      <div>
+                        <h3 className="text-sm font-black uppercase tracking-wider flex items-center gap-2 font-sans text-white">
+                          <span>📊</span> Tableau Récapitulatif des Établissements (Base de Données EPST)
+                        </h3>
+                        <p className="text-[11px] text-sky-200/90 font-medium">
+                          Suivi des effectifs, frais écolages, et bulletins sauvegardés avec archivage automatique.
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1 rounded-full text-[10px] font-mono border border-white/20 select-none">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        {schools.length} Écoles Enregistrées
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1 rounded-full text-[10px] font-mono border border-white/20 select-none">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                      {schools.length} Écoles Enregistrées
-                    </div>
-                  </div>
 
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-extrabold uppercase text-[9px] tracking-wider select-none">
-                          <th className="py-3 px-4">Nom de l'Établissement</th>
-                          <th className="py-3 px-4">Province &amp; Localisation</th>
-                          <th className="py-3 px-4 text-center">Code National</th>
-                          <th className="py-3 px-4 text-center">Effectif Élèves</th>
-                          <th className="py-3 px-4 text-center">Frais Recouvrés</th>
-                          <th className="py-3 px-4 text-center">Bulletins Générés</th>
-                          <th className="py-3 px-4 text-center">Indicateur Archivage</th>
-                          <th className="py-3 px-4 text-right">Espace de travail</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 font-medium">
-                        {schools.map((sch) => {
-                          const schStudents = students.filter(s => s.schoolId === sch.id);
-                          const schPayments = payments.filter(p => p.schoolId === sch.id);
-                          const schBulletins = bulletins.filter(b => b.schoolId === sch.id);
-                          const totalSchUSD = schPayments.reduce((acc, p) => p.currency === 'USD' ? acc + p.amount : acc + (p.amount / 2800), 0);
-                          
-                          const isSelected = sch.id === currentSchool.id;
-                          
-                          return (
-                            <tr 
-                              key={sch.id} 
-                              className={`hover:bg-sky-50/30 transition-colors cursor-pointer ${
-                                isSelected ? 'bg-sky-50/50 font-bold border-l-4 border-[#007FFF]' : ''
-                              }`}
-                              onClick={() => setActiveSchoolId(sch.id)}
-                            >
-                              <td className="py-3.5 px-4">
-                                <div className="font-extrabold text-slate-800 text-[11.5px]">{sch.name}</div>
-                                <div className="text-[10px] text-slate-400 font-sans mt-0.5">Chef d'Établissement: {sch.rectorName}</div>
-                              </td>
-                              <td className="py-3.5 px-4 text-slate-600 text-[10.5px]">
-                                <div className="font-semibold">{sch.province}</div>
-                                <div className="text-[9.5px] text-slate-400">{sch.commune}, {sch.city}</div>
-                              </td>
-                              <td className="py-3.5 px-4 text-center font-mono text-[11px] font-black text-indigo-950">
-                                <span className="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded">
-                                  {sch.nationalCode}
-                                </span>
-                              </td>
-                              <td className="py-3.5 px-4 text-center">
-                                <span className="text-[10.5px] font-bold text-slate-700 bg-sky-50 border border-sky-100/60 px-2.5 py-0.5 rounded-full">
-                                  👤 {schStudents.length} élèves
-                                </span>
-                              </td>
-                              <td className="py-3.5 px-4 text-center font-mono font-bold text-emerald-700 text-[11px]">
-                                ${totalSchUSD.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} USD
-                              </td>
-                              <td className="py-3.5 px-4 text-center">
-                                <span className="text-[10.5px] font-extrabold text-[#007FFF] bg-blue-50 border border-blue-100/60 px-2.5 py-0.5 rounded">
-                                  📝 {schBulletins.length} bulletins
-                                </span>
-                              </td>
-                              <td className="py-3.5 px-4 text-center">
-                                <span className="inline-flex items-center gap-1 text-[8.5px] font-mono font-bold uppercase bg-emerald-50 text-emerald-800 border border-emerald-200/60 px-2.5 py-0.5 rounded-full select-none">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                                  Enregistré &amp; Archivé
-                                </span>
-                              </td>
-                              <td className="py-3.5 px-4 text-right">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setActiveSchoolId(sch.id);
-                                  }}
-                                  className={`px-3 py-1 rounded-lg text-[9.5px] font-black uppercase transition-all border cursor-pointer ${
-                                    isSelected 
-                                      ? 'bg-[#007FFF] border-[#007FFF] text-white shadow-xs' 
-                                      : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                                  }`}
-                                >
-                                  {isSelected ? 'Sélectionné' : 'Voir Espace'}
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-extrabold uppercase text-[9px] tracking-wider select-none">
+                            <th className="py-3 px-4">Nom de l'Établissement</th>
+                            <th className="py-3 px-4">Province &amp; Localisation</th>
+                            <th className="py-3 px-4 text-center">Code National</th>
+                            <th className="py-3 px-4 text-center">Effectif Élèves</th>
+                            <th className="py-3 px-4 text-center">Frais Recouvrés</th>
+                            <th className="py-3 px-4 text-center">Bulletins Générés</th>
+                            <th className="py-3 px-4 text-center">Indicateur Archivage</th>
+                            <th className="py-3 px-4 text-right">Espace de travail</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 font-medium">
+                          {schools.map((sch) => {
+                            const schStudents = students.filter(s => s.schoolId === sch.id);
+                            const schPayments = payments.filter(p => p.schoolId === sch.id);
+                            const schBulletins = bulletins.filter(b => b.schoolId === sch.id);
+                            const totalSchUSD = schPayments.reduce((acc, p) => p.currency === 'USD' ? acc + p.amount : acc + (p.amount / 2800), 0);
+                            
+                            const isSelected = sch.id === currentSchool.id;
+                            
+                            return (
+                              <tr 
+                                key={sch.id} 
+                                className={`hover:bg-sky-50/30 transition-colors cursor-pointer ${
+                                  isSelected ? 'bg-sky-50/50 font-bold border-l-4 border-[#007FFF]' : ''
+                                }`}
+                                onClick={() => setActiveSchoolId(sch.id)}
+                              >
+                                <td className="py-3.5 px-4">
+                                  <div className="font-extrabold text-slate-800 text-[11.5px]">{sch.name}</div>
+                                  <div className="text-[10px] text-slate-400 font-sans mt-0.5">Chef d'Établissement: {sch.rectorName}</div>
+                                </td>
+                                <td className="py-3.5 px-4 text-slate-600 text-[10.5px]">
+                                  <div className="font-semibold">{sch.province}</div>
+                                  <div className="text-[9.5px] text-slate-400">{sch.commune}, {sch.city}</div>
+                                </td>
+                                <td className="py-3.5 px-4 text-center font-mono text-[11px] font-black text-indigo-950">
+                                  <span className="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded">
+                                    {sch.nationalCode}
+                                  </span>
+                                </td>
+                                <td className="py-3.5 px-4 text-center">
+                                  <span className="text-[10.5px] font-bold text-slate-700 bg-sky-50 border border-sky-100/60 px-2.5 py-0.5 rounded-full">
+                                    👤 {schStudents.length} élèves
+                                  </span>
+                                </td>
+                                <td className="py-3.5 px-4 text-center font-mono font-bold text-emerald-700 text-[11px]">
+                                  ${totalSchUSD.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} USD
+                                </td>
+                                <td className="py-3.5 px-4 text-center">
+                                  <span className="text-[10.5px] font-extrabold text-[#007FFF] bg-blue-50 border border-blue-100/60 px-2.5 py-0.5 rounded">
+                                    📝 {schBulletins.length} bulletins
+                                  </span>
+                                </td>
+                                <td className="py-3.5 px-4 text-center">
+                                  <span className="inline-flex items-center gap-1 text-[8.5px] font-mono font-bold uppercase bg-emerald-50 text-emerald-800 border border-emerald-200/60 px-2.5 py-0.5 rounded-full select-none">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Enregistré &amp; Archivé
+                                  </span>
+                                </td>
+                                <td className="py-3.5 px-4 text-right">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setActiveSchoolId(sch.id);
+                                    }}
+                                    className={`px-3 py-1 rounded-lg text-[9.5px] font-black uppercase transition-all border cursor-pointer ${
+                                      isSelected 
+                                        ? 'bg-[#007FFF] border-[#007FFF] text-white shadow-xs' 
+                                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                                    }`}
+                                  >
+                                    {isSelected ? 'Sélectionné' : 'Voir Espace'}
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Grid details containing verification & info manual */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

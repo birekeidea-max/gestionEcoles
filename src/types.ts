@@ -36,7 +36,7 @@ export type SchoolOption =
   | 'Coupe-Couture'
   | 'Architecture';
 
-export type SchoolClassLevel = '1ère Année' | '2ème Année' | '3ème Année' | '4ème Année' | '5ème Année' | '6ème Année';
+export type SchoolClassLevel = '7ème EB' | '8ème EB' | '1ère Des humanités' | '2ème Des humanités' | '3ème Des humanités' | '4ème Des humanités';
 
 export interface School {
   id: string;

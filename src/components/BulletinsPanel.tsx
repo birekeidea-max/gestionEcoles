@@ -296,7 +296,7 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
   // MULTI-STEP CREATOR CONFIG
   const [formSchoolId, setFormSchoolId] = useState(currentSchool.id);
   const [formOption, setFormOption] = useState<SchoolOption>('Pédagogie');
-  const [formClass, setFormClass] = useState<SchoolClassLevel>('6ème Année');
+  const [formClass, setFormClass] = useState<SchoolClassLevel>('4ème Des humanités');
 
   // Student manual input settings
   const [isManualInput, setIsManualInput] = useState(false);
@@ -653,6 +653,17 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
       if (onSaveArchivedFile) {
         onSaveArchivedFile(autoFile);
       }
+
+      // DIRECT HARDWARE STORAGE DOWNLOAD
+      // Trigger automatic file download to device's Local File Manager (Downloads)
+      const downloadLink = document.createElement('a');
+      downloadLink.href = dataUrl;
+      downloadLink.download = `SGESC_BULLETIN_${studName.toUpperCase().replace(/\s+/g, '_')}_${preparedBulletin.id.slice(-4)}.png`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+      
+      showInstantAlert(`Sceau d'Archivage Généré ! Le bulletin de ${studName} a été automatiquement enregistré dans l'application et téléchargé en format image haute résolution dans le gestionnaire de fichiers de votre appareil.`);
     } catch (e) {
       console.error("Auto Archive failed", e);
     }

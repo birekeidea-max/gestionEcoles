@@ -58,7 +58,7 @@ export const PedagogyPanel: React.FC<PedagogyPanelProps> = ({
   };
 
   // --- SUB-SEC 1: COTATION STATES ---
-  const [cotationClass, setCotationClass] = useState<SchoolClassLevel>('6ème Année');
+  const [cotationClass, setCotationClass] = useState<SchoolClassLevel>('4ème Des humanités');
   const [cotationOption, setCotationOption] = useState<SchoolOption>('Latin-Philo');
   const [cotationCourse, setCotationCourse] = useState('Philosophie Générale');
   
@@ -144,7 +144,7 @@ export const PedagogyPanel: React.FC<PedagogyPanelProps> = ({
 
   // Prep form states
   const [prepCourse, setPrepCourse] = useState('Philosophie Générale');
-  const [prepClass, setPrepClass] = useState<SchoolClassLevel>('6ème Année');
+  const [prepClass, setPrepClass] = useState<SchoolClassLevel>('4ème Des humanités');
   const [prepOption, setPrepOption] = useState<SchoolOption>('Latin-Philo');
   const [prepSubject, setPrepSubject] = useState('');
   const [prepObjective, setPrepObjective] = useState('');
@@ -230,7 +230,7 @@ export const PedagogyPanel: React.FC<PedagogyPanelProps> = ({
   const [showJournalModal, setShowJournalModal] = useState(false);
 
   // Journal form states
-  const [jClass, setJClass] = useState<SchoolClassLevel>('6ème Année');
+  const [jClass, setJClass] = useState<SchoolClassLevel>('4ème Des humanités');
   const [jOption, setJOption] = useState<SchoolOption>('Latin-Philo');
   const [jHourFrom, setJHourFrom] = useState('08:00');
   const [jHourTo, setJHourTo] = useState('09:50');
