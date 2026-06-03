@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { UserRole } from '../types';
 import { SCHOOL_OPTIONS, INITIAL_SCHOOLS } from '../constants';
 import { CongoCoatOfArms, CongoFlagIcon } from './CongoTheme';
@@ -61,14 +61,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
     }
   };
 
-  // S'authentifier avec mail ou Google pour Bireke Idea uniquement
-  const [googleModalOpen, setGoogleModalOpen] = useState(false);
-  const [emailModalOpen, setEmailModalOpen] = useState(false);
-  const [googleStep, setGoogleStep] = useState<'SELECT' | 'ENTER_CUSTOM' | 'SUCCESS' | 'DENIED'>('SELECT');
-  const [customGoogleEmail, setCustomGoogleEmail] = useState('');
-  const [directEmail, setDirectEmail] = useState('');
-  const [directPassword, setDirectPassword] = useState('');
-  const [modalError, setModalError] = useState('');
+  // State variables for normal registration and login forms
 
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -89,12 +82,24 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
   // Hidden state to reveal Central Admin Portal
   const [showCentralPortal, setShowCentralPortal] = useState(false);
   const [flagClicks, setFlagClicks] = useState(0);
+  const flagClickTimeoutRef = useRef<any>(null);
 
   const handleFlagClick = () => {
+    if (flagClickTimeoutRef.current) {
+      clearTimeout(flagClickTimeoutRef.current);
+    }
+    
+    // Reset consecutive clicks if there is no click for 4 seconds
+    flagClickTimeoutRef.current = setTimeout(() => {
+      setFlagClicks(0);
+    }, 4000);
+
     setFlagClicks(prev => {
       const next = prev + 1;
-      if (next >= 5) {
+      if (next >= 10) {
         setShowCentralPortal(true);
+        setAuthMode('SUPER_ADMIN');
+        return 0; // Reset consecutive clicks
       }
       return next;
     });
@@ -104,6 +109,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
     const params = new URLSearchParams(window.location.search);
     if (params.get('admin') === 'true' || params.get('superadmin') === 'true') {
       setShowCentralPortal(true);
+      setAuthMode('SUPER_ADMIN');
     }
   }, []);
 
@@ -420,10 +426,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
               <input
                 type="password"
                 required
-                placeholder="Saisissez la clé d'administration"
+                placeholder="Ex : 012000"
                 value={databaseSecretInput}
                 onChange={(e) => setDatabaseSecretInput(e.target.value)}
-                className="w-full text-center text-xl font-mono tracking-widest font-extrabold rounded-xl border border-slate-700 bg-slate-950 py-3 text-red-500 shadow-inner focus:outline-hidden focus:border-[#D32F2F] focus:ring-1 focus:ring-[#D32F2F] placeholder-slate-800"
+                className="w-full text-center text-xl font-mono tracking-widest font-extrabold rounded-xl border border-slate-700 bg-slate-950 py-3 text-red-500 shadow-inner focus:outline-hidden focus:border-[#D32F2F] focus:ring-1 focus:ring-[#D32F2F] placeholder-slate-700"
               />
             </div>
 
@@ -608,12 +614,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
         {/* Header containing Emblem details */}
         <div className="text-center relative">
           <div className="flex justify-center mb-3">
-            <span className="relative inline-block">
+            <span onClick={handleFlagClick} className="relative inline-block select-none" title="Drapeau RDC">
               <CongoFlagIcon className="w-16 h-10 shadow-md border border-slate-100 rounded-sm" />
-              <span className="absolute -top-2 -right-2 flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-yellow-400"></span>
-              </span>
             </span>
           </div>
 
@@ -637,6 +639,34 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
 
         {!isRegisteringSchool ? (
           <div className="space-y-5 mt-6">
+            {/* TABS SELECTOR FOR ACCESS METHOD (ONLY visible if unlocked/via secret URL parameter) */}
+            {showCentralPortal && (
+              <div className="flex rounded-xl bg-slate-100 p-1 border border-slate-200 shadow-3xs animate-fade-in">
+                <button
+                  type="button"
+                  onClick={() => { setAuthMode('STANDARD'); setFormError(''); }}
+                  className={`flex-1 py-1.5 text-center text-[10.5px] font-black rounded-lg transition-all cursor-pointer ${
+                    authMode === 'STANDARD'
+                      ? 'bg-white text-slate-800 shadow-xs border border-slate-300/40'
+                      : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                  }`}
+                >
+                  🏫 Portail des Écoles (Agent / Préfet)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setAuthMode('SUPER_ADMIN'); setFormError(''); }}
+                  className={`flex-1 py-1.5 text-center text-[10.5px] font-black rounded-lg transition-all cursor-pointer ${
+                    authMode === 'SUPER_ADMIN'
+                      ? 'bg-slate-950 text-amber-400 font-extrabold shadow-sm border border-amber-500/20'
+                      : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                  }`}
+                >
+                  🔑 Admin de la Base
+                </button>
+              </div>
+            )}
+
             <form className="space-y-5" onSubmit={handleLoginSubmit}>
               {authMode === 'STANDARD' ? (
                 <div className="space-y-4">
@@ -983,13 +1013,13 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
                       id="admin-email"
                       type="email"
                       required
-                      placeholder="votre_adresse@epst.gouv.cd"
+                      placeholder="Ex : birekeidea@gmail.com"
                       value={adminEmail}
                       onChange={(e) => setAdminEmail(e.target.value)}
-                      className="w-full rounded-xl border border-slate-300 py-2.5 px-3.5 text-sm shadow-sm focus:border-sky-500 focus:outline-hidden focus:ring-2 focus:ring-sky-500/20 font-medium text-slate-850"
+                      className="w-full rounded-xl border border-slate-300 py-2.5 px-3.5 text-xs shadow-sm focus:border-sky-500 focus:outline-hidden focus:ring-2 focus:ring-sky-500/20 font-medium text-slate-850"
                     />
                   </div>
-
+ 
                   {/* Password Input */}
                   <div>
                     <label htmlFor="admin-pass" className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
@@ -999,10 +1029,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
                       id="admin-pass"
                       type="password"
                       required
-                      placeholder="Entrez votre clé d'authentification secrète"
+                      placeholder="Ex : b012000b"
                       value={adminPassword}
                       onChange={(e) => setAdminPassword(e.target.value)}
-                      className="w-full rounded-xl border border-slate-305 py-2.5 px-3.5 text-sm shadow-sm focus:border-sky-505 focus:outline-hidden focus:ring-2 focus:ring-sky-505/20 font-medium text-slate-850"
+                      className="w-full rounded-xl border border-slate-305 py-2.5 px-3.5 text-xs shadow-sm focus:border-sky-505 focus:outline-hidden focus:ring-2 focus:ring-sky-505/20 font-medium text-slate-850"
                     />
                   </div>
 
@@ -1027,61 +1057,6 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
               </button>
             </form>
 
-            {/* DIVIDER POUR L'ADMINISTRATEUR CENTRAL */}
-            <div className="relative my-4 flex py-1 items-center">
-              <div className="flex-grow border-t border-slate-205"></div>
-              <span className="mx-3 flex-shrink text-[10px] text-slate-400 font-extrabold uppercase tracking-wider font-mono">
-                Portail Administratif Central
-              </span>
-              <div className="flex-grow border-t border-slate-205"></div>
-            </div>
-
-            {/* BOUTONS D'ACCÈS UNIQUES (EMAIL ET GOOGLE) */}
-            <div className="grid grid-cols-2 gap-2.5">
-              <button
-                type="button"
-                onClick={() => {
-                  setGoogleStep('SELECT');
-                  setCustomGoogleEmail('');
-                  setGoogleModalOpen(true);
-                }}
-                className="flex items-center justify-center gap-1.5 py-2.5 px-3 border border-slate-250 bg-white hover:bg-slate-50 text-slate-700 text-xs font-black rounded-xl shadow-xs transition-all cursor-pointer"
-              >
-                <svg className="w-4.5 h-4.5 shrink-0" viewBox="0 0 24 24">
-                  <path
-                    fill="#4285F4"
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  />
-                  <path
-                    fill="#34A853"
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  />
-                  <path
-                    fill="#FBBC05"
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                  />
-                  <path
-                    fill="#EA4335"
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                  />
-                </svg>
-                <span>Continuer avec Google</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setDirectEmail('');
-                  setDirectPassword('');
-                  setModalError('');
-                  setEmailModalOpen(true);
-                }}
-                className="flex items-center justify-center gap-1.5 py-2.5 px-3 border border-slate-250 bg-slate-50 hover:bg-slate-100 text-slate-800 text-xs font-black rounded-xl shadow-xs transition-all cursor-pointer"
-              >
-                <Mail className="w-4 h-4 text-slate-500 shrink-0" />
-                <span>Continuer avec Mail</span>
-              </button>
-            </div>
           </div>
         ) : (
           /* Register New School Form */
@@ -1309,298 +1284,6 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
           <span>Accès crypté &bull; Données d’écoles sécurisées RDC EPST</span>
         </div>
       </div>
-
-      {/* MODAL GOOGLE SIGN IN */}
-      {googleModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-[110] p-4 font-sans">
-          <div className="bg-white rounded-3xl max-w-sm w-full outline outline-slate-200/50 overflow-hidden shadow-2xl relative flex flex-col p-6 space-y-5 text-sm animate-in fade-in duration-200">
-            {/* Header */}
-            <div className="text-center relative">
-              <button 
-                onClick={() => setGoogleModalOpen(false)}
-                className="absolute right-0 top-0 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full p-1 cursor-pointer transition-colors animate-none"
-                type="button"
-              >
-                <X className="w-4 h-4" />
-              </button>
-
-              <div className="flex justify-center mb-2">
-                {/* Google logo Colorful */}
-                <svg className="w-10 h-10" viewBox="0 0 24 24">
-                  <path
-                    fill="#4285F4"
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  />
-                  <path
-                    fill="#34A853"
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  />
-                  <path
-                    fill="#FBBC05"
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                  />
-                  <path
-                    fill="#EA4335"
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                  />
-                </svg>
-              </div>
-
-              <h3 className="text-base font-black text-slate-800">S'identifier avec Google</h3>
-              <p className="text-[11px] text-slate-500 mt-0.5">Choisir un compte pour continuer vers SGESC RDC</p>
-            </div>
-
-            {googleStep === 'SELECT' && (
-              <div className="space-y-2.5">
-                {/* Bireke Idea account */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setGoogleStep('SUCCESS');
-                    setTimeout(() => {
-                      trigger2FA({
-                        fullName: 'Bireke Idea',
-                        phone: 'Administrateur Général',
-                        role: 'Administrateur',
-                        schoolId: 'all',
-                        email: 'birekeidea@gmail.com'
-                      });
-                    }, 1700);
-                  }}
-                  className="w-full flex items-center gap-3 p-3 border border-slate-200 rounded-xl text-left bg-slate-50 hover:bg-slate-100 transition-all cursor-pointer group"
-                >
-                  <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-black text-xs flex items-center justify-center">
-                    BI
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <span className="font-extrabold text-slate-800 text-xs block truncate font-sans">Bireke Idea</span>
-                    <span className="text-[11px] text-slate-500 font-medium block truncate font-mono">birekeidea@gmail.com</span>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
-                </button>
-
-                {/* Other account selection */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setGoogleStep('ENTER_CUSTOM');
-                    setCustomGoogleEmail('');
-                  }}
-                  className="w-full flex items-center gap-3 p-3 border border-dashed border-slate-250 rounded-xl text-left hover:bg-slate-50/70 transition-all cursor-pointer"
-                >
-                  <div className="w-8 h-8 rounded-full border border-slate-300 text-slate-500 flex items-center justify-center font-bold text-lg leading-none">
-                    +
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <span className="font-bold text-slate-700 text-xs block font-sans">Utiliser un autre compte</span>
-                    <span className="text-[10px] text-slate-400 block font-mono">Se connecter via un autre compte Google</span>
-                  </div>
-                </button>
-              </div>
-            )}
-
-            {googleStep === 'ENTER_CUSTOM' && (
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const emailTrimmed = customGoogleEmail.trim().toLowerCase();
-                  if (!emailTrimmed) return;
-
-                  if (emailTrimmed === 'birekeidea@gmail.com' || emailTrimmed === 'birekeidea@gmail') {
-                    setGoogleStep('SUCCESS');
-                    setTimeout(() => {
-                      setPendingLoginUserData({
-                        fullName: 'Bireke Idea',
-                        phone: 'Administrateur Général',
-                        role: 'Administrateur',
-                        schoolId: 'all',
-                        email: 'birekeidea@gmail.com'
-                      });
-                      setIsVerifyingDatabaseSecret(true);
-                      setDatabaseSecretInput('');
-                      setDatabaseSecretError('');
-                      setGoogleModalOpen(false);
-                    }, 1700);
-                  } else {
-                    setGoogleStep('DENIED');
-                  }
-                }}
-                className="space-y-4"
-              >
-                <div>
-                  <label htmlFor="custom-gmail" className="block text-xs font-bold text-slate-600 uppercase mb-1">
-                    Adresse Email (Google)
-                  </label>
-                  <input
-                    id="custom-gmail"
-                    type="email"
-                    required
-                    value={customGoogleEmail}
-                    onChange={(e) => setCustomGoogleEmail(e.target.value)}
-                    placeholder="exemple@gmail.com"
-                    className="w-full text-xs rounded-xl border border-slate-300 py-2.5 px-3 focus:outline-hidden focus:ring-1 focus:ring-blue-500 font-medium text-slate-800"
-                  />
-                </div>
-
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setGoogleStep('SELECT')}
-                    className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-all"
-                  >
-                    Retour
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow transition-all"
-                  >
-                    Suivant
-                  </button>
-                </div>
-              </form>
-            )}
-
-            {googleStep === 'SUCCESS' && (
-              <div className="text-center py-4 space-y-3">
-                <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto border border-emerald-100 animate-pulse">
-                  <ShieldCheck className="w-6 h-6" />
-                </div>
-                <h4 className="font-extrabold text-[#D32F2F] uppercase text-xs tracking-wider">Connexion Approuvée !</h4>
-                <p className="text-xs text-slate-500 leading-relaxed max-w-xs mx-auto">
-                  Bonjour <b>Bireke Idea</b>. Votre compte Google principal a été identifié. Déverrouillage automatique de la Base Administrative Centrale en cours...
-                </p>
-                <div className="w-full bg-slate-105 rounded-full h-1.5 overflow-hidden relative">
-                  <div className="bg-emerald-500 h-1.5 rounded-full absolute left-0 top-0 animate-pulse animate-infinite" style={{ width: '100%' }}></div>
-                </div>
-              </div>
-            )}
-
-            {googleStep === 'DENIED' && (
-              <div className="space-y-4 text-center py-2">
-                <div className="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto border border-red-150">
-                  <ShieldAlert className="w-6 h-6" />
-                </div>
-                <h4 className="font-black text-rose-950 text-xs uppercase tracking-wide font-sans">🚫 ACCÈS REFUSÉ</h4>
-                <p className="text-[11px] text-slate-600 bg-red-100/30 p-3 rounded-xl border border-red-200 leading-relaxed text-left">
-                  L'adresse email <b>"{customGoogleEmail}"</b> n'est pas répertoriée dans la Base de Données Centralisée du SGESC RDC.
-                  Seul l'Administrateur Général central (birekeidea@gmail.com) est habilité à s'authentifier par Google.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setGoogleStep('SELECT')}
-                  className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-all"
-                >
-                  Choisir un autre compte
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* MODAL EMAIL SIGN IN */}
-      {emailModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-[110] p-4 font-sans">
-          <div className="bg-white rounded-3xl max-w-sm w-full outline outline-slate-200/50 overflow-hidden shadow-2xl relative flex flex-col p-6 space-y-4 text-sm animate-in fade-in duration-200">
-            {/* Header */}
-            <div className="text-center relative">
-              <button 
-                onClick={() => setEmailModalOpen(false)}
-                className="absolute right-0 top-0 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full p-1 cursor-pointer transition-colors"
-                type="button"
-              >
-                <X className="w-4 h-4" />
-              </button>
-
-              <div className="flex justify-center mb-1">
-                <div className="p-2 bg-slate-10Q text-slate-700 rounded-full">
-                  <Lock className="w-5 h-5 text-slate-800" />
-                </div>
-              </div>
-
-              <h3 className="text-base font-black text-slate-800">S'authentifier avec Mail</h3>
-              <p className="text-[11px] text-slate-500">Accès restreint au Secrétariat Général Administratif</p>
-            </div>
-
-            {modalError && (
-              <div className="p-3 bg-red-50 text-red-700 text-xs rounded-xl font-bold border border-red-200">
-                {modalError}
-              </div>
-            )}
-
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                setModalError('');
-                
-                const emailNorm = directEmail.trim().toLowerCase();
-                const passNorm = directPassword.trim();
-                
-                if ((emailNorm === 'birekeidea@gmail.com' || emailNorm === 'birekeidea@gmail') && passNorm === 'b012000b') {
-                  setPendingLoginUserData({
-                    fullName: 'Bireke Idea',
-                    phone: 'Administrateur Général',
-                    role: 'Administrateur',
-                    schoolId: 'all',
-                    email: 'birekeidea@gmail.com'
-                  });
-                  setIsVerifyingDatabaseSecret(true);
-                  setDatabaseSecretInput('');
-                  setDatabaseSecretError('');
-                  setEmailModalOpen(false);
-                } else {
-                  setModalError("🚫 Accès Refusé : Mail Administratif ou Mot de passe de Sécurité incorrect.");
-                }
-              }}
-              className="space-y-3.5"
-            >
-              <div>
-                <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">
-                  Mail Administratif *
-                </label>
-                <input
-                  type="email"
-                  required
-                  placeholder="votre_adresse@epst.gouv.cd"
-                  value={directEmail}
-                  onChange={(e) => setDirectEmail(e.target.value)}
-                  className="w-full text-xs rounded-xl border border-slate-300 py-2.5 px-3 focus:outline-hidden focus:ring-1 focus:ring-blue-500 font-medium text-slate-800"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-bold text-slate-650 uppercase mb-1">
-                  Mot de passe de Sécurité RDC *
-                </label>
-                <input
-                  type="password"
-                  required
-                  placeholder="Clé de chiffrement administrative"
-                  value={directPassword}
-                  onChange={(e) => setDirectPassword(e.target.value)}
-                  className="w-full text-xs rounded-xl border border-slate-300 py-2.5 px-3 focus:outline-hidden focus:ring-1 focus:ring-blue-500 font-medium text-slate-800"
-                />
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setEmailModalOpen(false)}
-                  className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-all"
-                >
-                  Fermer
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow transition-all"
-                >
-                  Valider la Clé
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
