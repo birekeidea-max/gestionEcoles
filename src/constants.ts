@@ -154,7 +154,10 @@ export const INITIAL_SCHOOLS: School[] = [
     city: 'Kinshasa',
     commune: 'Gombe',
     nationalCode: '10103409',
-    rectorName: 'Révérend Père Préfet Jean-Michel'
+    rectorName: 'Révérend Père Préfet Jean-Michel',
+    isApproved: true,
+    rectorEmail: 'jean.michel@boboto.cd',
+    rectorPhone: '+243 815 112 233'
   },
   {
     id: 'sc-2',
@@ -163,7 +166,10 @@ export const INITIAL_SCHOOLS: School[] = [
     city: 'Kinshasa',
     commune: 'Kinshasa',
     nationalCode: '10104822',
-    rectorName: 'Sœur Préfète Aimée Mbuyi'
+    rectorName: 'Sœur Préfète Aimée Mbuyi',
+    isApproved: true,
+    rectorEmail: 'aimee.mbuyi@kabambare.com',
+    rectorPhone: '+243 994 482 110'
   },
   {
     id: 'sc-3',
@@ -172,7 +178,10 @@ export const INITIAL_SCHOOLS: School[] = [
     city: 'Goma',
     commune: 'Karisimbi',
     nationalCode: '20205118',
-    rectorName: 'Monsieur le Préfet Pascal Mupende'
+    rectorName: 'Monsieur le Préfet Pascal Mupende',
+    isApproved: true,
+    rectorEmail: 'pascal.mupende@instgoma.net',
+    rectorPhone: '+243 853 445 566'
   },
   {
     id: 'sc-4',
@@ -181,7 +190,46 @@ export const INITIAL_SCHOOLS: School[] = [
     city: 'Lubumbashi',
     commune: 'Lubumbashi',
     nationalCode: '30302194',
-    rectorName: 'Monseigneur l’Abbé Sylvain Nkulu'
+    rectorName: 'Monseigneur l’Abbé Sylvain Nkulu',
+    isApproved: true,
+    rectorEmail: 'sylvain.nkulu@imara.cd',
+    rectorPhone: '+243 892 783 911'
+  },
+  {
+    id: 'sc-5',
+    name: 'Collège Alfajiri',
+    province: 'Sud-Kivu',
+    city: 'Bukavu',
+    commune: 'Ibanda',
+    nationalCode: '40401827',
+    rectorName: 'Père Préfet Jean-Claude Baguma',
+    isApproved: true,
+    rectorEmail: 'jc.baguma@alfajiri.org',
+    rectorPhone: '+243 812 554 990'
+  },
+  {
+    id: 'sc-6',
+    name: 'Institut Maele',
+    province: 'Tshopo',
+    city: 'Kisangani',
+    commune: 'Makiso',
+    nationalCode: '50503112',
+    rectorName: 'Préfet Thaddée Lihamba',
+    isApproved: false,
+    rectorEmail: 'thaddee.lihamba@maele.org',
+    rectorPhone: '+243 991 223 344'
+  },
+  {
+    id: 'sc-7',
+    name: 'Lycée Bosangani',
+    province: 'Kinshasa',
+    city: 'Kinshasa',
+    commune: 'Gombe',
+    nationalCode: '10108849',
+    rectorName: 'Mère Supérieure Hélène Ngalula',
+    isApproved: true,
+    rectorEmail: 'helene.ngalula@bosangani.cd',
+    rectorPhone: '+243 855 667 788'
   }
 ];
 

@@ -628,6 +628,24 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
           <p className="text-[10px] text-slate-400 font-mono mt-0.5">
             République Démocratique du Congo &bull; Plateforme Nationale Unifiée
           </p>
+
+          {/* Majestic Ministerial School Education Banner */}
+          <div className="mt-4 rounded-2xl overflow-hidden border border-slate-200/80 shadow-3xs aspect-video bg-slate-50 relative group">
+            <img 
+              src="/src/assets/images/epst_education_hero_1780509042059.png" 
+              alt="EPST RDC Éducation Scolaire"
+              className="w-full h-full object-cover select-none transition-transform duration-500 group-hover:scale-[1.01]"
+              referrerPolicy="no-referrer"
+            />
+            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-900/90 via-slate-900/50 to-transparent p-3 text-left">
+              <span className="text-[8.5px] uppercase tracking-wider font-mono font-black text-amber-400 bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-900/30">
+                PROJET NATIONAL D'ÉCONOMIE ENSEIGNANTE
+              </span>
+              <span className="block text-white font-extrabold text-[11px] mt-1 leading-tight">
+                Direction d'Habilitation • Administration Scolaire Centrale EPST
+              </span>
+            </div>
+          </div>
         </div>
 
         {formError && (

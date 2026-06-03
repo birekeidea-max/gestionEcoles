@@ -166,3 +166,16 @@ export interface ArchivedFile {
   imageData: string; // base64 representation of the frozen bulletin image
 }
 
+export interface UserActivity {
+  id: string;
+  userName: string;
+  userRole: UserRole;
+  schoolName: string;
+  action: string;
+  timestamp: string;
+  category: 'PEDAGOGICAL' | 'FINANCIAL' | 'SECURITY' | 'ADMINISTRATIVE';
+  quality: 'Excellent' | 'Régulier' | 'Avertissement' | 'Critique';
+  details?: string;
+}
+
+

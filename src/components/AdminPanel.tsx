@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, School, Student, Payment, Bulletin, UserRole } from '../types';
+import { User, School, Student, Payment, Bulletin, UserRole, UserActivity } from '../types';
 import { 
   ShieldCheck, 
   Users, 
@@ -24,7 +24,9 @@ import {
   Upload,
   Copy,
   Database,
-  Handshake
+  Handshake,
+  Activity,
+  History
 } from 'lucide-react';
 
 interface AdminPanelProps {
@@ -38,6 +40,8 @@ interface AdminPanelProps {
   setPayments: React.Dispatch<React.SetStateAction<Payment[]>>;
   bulletins: Bulletin[];
   setBulletins: React.Dispatch<React.SetStateAction<Bulletin[]>>;
+  userActivities: UserActivity[];
+  setUserActivities: React.Dispatch<React.SetStateAction<UserActivity[]>>;
 }
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({
@@ -50,7 +54,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   payments,
   setPayments,
   bulletins,
-  setBulletins
+  setBulletins,
+  userActivities,
+  setUserActivities
 }) => {
   // Count unapproved schools needing admin authorize
   const pendingCount = schools.filter(sch => sch.isApproved === false).length;
@@ -59,15 +65,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   // 'PENDING_APPROVALS': Accès & Homologations
   // 'SCHOOLS': Écoles Homologuées
   // 'USERS': Membres & Rôles
+  // 'AUDIT_LOGS': Audit & Suivi d'Activités
   // 'BACKUP_LOAD': Transfert de Données (Exporter, Importer, Copier)
   // 'GLOBAL_STATS': Analyses & Rapports RDC
-  const [subTab, setSubTab] = useState<'PENDING_APPROVALS' | 'SCHOOLS' | 'USERS' | 'BACKUP_LOAD' | 'GLOBAL_STATS'>(() => {
+  const [subTab, setSubTab] = useState<'PENDING_APPROVALS' | 'SCHOOLS' | 'USERS' | 'AUDIT_LOGS' | 'BACKUP_LOAD' | 'GLOBAL_STATS'>(() => {
     return pendingCount > 0 ? 'PENDING_APPROVALS' : 'SCHOOLS';
   });
 
   // Search & Filters for Users
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('ALL');
+
+  // Search & Filters for Audit Logs
+  const [logQuery, setLogQuery] = useState('');
+  const [catFilter, setCatFilter] = useState<string>('ALL');
+  const [qualFilter, setQualFilter] = useState<string>('ALL');
 
   // State Management for Forms
   const [isAddingUser, setIsAddingUser] = useState(false);
@@ -536,15 +548,27 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         </button>
 
         <button
+          onClick={() => { setSubTab('AUDIT_LOGS'); }}
+          className={`py-2 px-3.5 text-xs font-black uppercase tracking-wide rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+            subTab === 'AUDIT_LOGS'
+              ? 'bg-rose-700 text-white shadow-md'
+              : 'text-slate-550 hover:text-slate-900 hover:bg-slate-200/50'
+          }`}
+        >
+          <History className="w-3.5 h-3.5" />
+          <span>📟 Audit &amp; Activités ({userActivities.length})</span>
+        </button>
+
+        <button
           onClick={() => { setSubTab('BACKUP_LOAD'); }}
           className={`py-2 px-3.5 text-xs font-black uppercase tracking-wide rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
             subTab === 'BACKUP_LOAD'
-              ? 'bg-indigo-600 text-white shadow-md'
+              ? 'bg-emerald-600 text-white shadow-md'
               : 'text-slate-550 hover:text-slate-905 hover:bg-slate-200/50'
           }`}
         >
           <Database className="w-3.5 h-3.5" />
-          <span>Sauvegardes / Imports / Copies</span>
+          <span>📈 Rapports Excel &amp; CSV</span>
         </button>
 
         <button
@@ -1229,158 +1253,369 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         </div>
       )}
 
-      {/**************** SUB-TAB: SAUVEGARDES, IMPORTS, COPIES (NEW REAL TECHNOLOGY) *****************/}
+      {/**************** SUB-TAB: AUDIT LOGS (SUIVI DES PREFETS & ACTIONS) *****************/}
+      {subTab === 'AUDIT_LOGS' && (() => {
+        // Render helper code
+        const filteredActivities = userActivities.filter(act => {
+          const matchesQuery = 
+            act.userName.toLowerCase().includes(logQuery.toLowerCase()) ||
+            act.schoolName.toLowerCase().includes(logQuery.toLowerCase()) ||
+            act.action.toLowerCase().includes(logQuery.toLowerCase()) ||
+            (act.details && act.details.toLowerCase().includes(logQuery.toLowerCase()));
+
+          const matchesCategory = catFilter === 'ALL' || act.category === catFilter;
+          const matchesQuality = qualFilter === 'ALL' || act.quality === qualFilter;
+
+          return matchesQuery && matchesCategory && matchesQuality;
+        });
+
+        const handleSimulateActivity = () => {
+          const possibleActions = [
+            {
+              action: "Génération d'un bulletin trimestriel",
+              category: "PEDAGOGICAL",
+              quality: "Excellent",
+              details: "Génération et archivage de bulletin pour Placide Mwamba. Sceau d'authentification apposé."
+            },
+            {
+              action: "Validation d'une leçon",
+              category: "PEDAGOGICAL",
+              quality: "Excellent",
+              details: "Validation de la fiche de leçon 'Sciences physiques: mouvement uniforme' pour le niveau 4ème."
+            },
+            {
+              action: "Enregistrement de paiement minerval",
+              category: "FINANCIAL",
+              quality: "Excellent",
+              details: "Virement de 15 USD payé par CDF équivalent (42000 CDF) enregistré pour le mois en cours."
+            },
+            {
+              action: "Modification autorisée d'état civil d'un élève",
+              category: "ADMINISTRATIVE",
+              quality: "Régulier",
+              details: "Correction de l'orthographe du nom de famille de l'élève Mwamba (remplacement de 'Mwanba')"
+            },
+            {
+              action: "Tentative de connexion refusée",
+              category: "SECURITY",
+              quality: "Avertissement",
+              details: "Tentative de connexion avec un code d'homologation inexistant. Accès refusé par précaution."
+            },
+            {
+              action: "Rapport d'incident pédagogique",
+              category: "PEDAGOGICAL",
+              quality: "Avertissement",
+              details: "Absence injustifiée d'un enseignant principal signalée sur le journal de classe."
+            },
+            {
+              action: "Forçage de réinitialisation de mot de passe",
+              category: "SECURITY",
+              quality: "Critique",
+              details: "Changement d'habilitation d'accès demandé par un inspecteur provincial."
+            },
+            {
+              action: "Certification d'examen d'État",
+              category: "ADMINISTRATIVE",
+              quality: "Excellent",
+              details: "Fiche d'épreuve enregistrée sous protocole de cryptage national."
+            }
+          ];
+
+          const nonAdminUsers = allUsers.filter(u => u.role !== 'Administrateur');
+          const randomUser = nonAdminUsers.length > 0 
+            ? nonAdminUsers[Math.floor(Math.random() * nonAdminUsers.length)] 
+            : { fullName: "Préfet Simulien", role: "Préfet des études" as UserRole, schoolId: "sc-1" };
+
+          const randomAction = possibleActions[Math.floor(Math.random() * possibleActions.length)];
+          const associatedSchool = schools.find(s => s.id === randomUser.schoolId);
+
+          const newActivity: UserActivity = {
+            id: `act-sim-${Date.now()}`,
+            userName: randomUser.fullName,
+            userRole: randomUser.role,
+            schoolName: associatedSchool ? associatedSchool.name : "Établissement RDC",
+            action: randomAction.action,
+            timestamp: new Date().toLocaleString('fr-CD'),
+            category: randomAction.category as any,
+            quality: randomAction.quality as any,
+            details: randomAction.details
+          };
+
+          setUserActivities(prev => [newActivity, ...prev]);
+        };
+
+        const handleClearLogs = () => {
+          if (window.confirm("Voulez-vous vraiment vider tout l'historique des connexions et d'activité du système ? Cette action est irréversible !")) {
+            setUserActivities([]);
+          }
+        };
+
+        return (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-2xl border border-slate-200">
+              <div className="space-y-1">
+                <h4 className="font-extrabold text-slate-800 text-sm flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-rose-650" />
+                  SUIVI D’ACTIVITÉS &amp; JOURNAL DES CONNEXIONS (AUDIT DE SURETÉ)
+                </h4>
+                <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                  Consultez l'historique des accès au portail administratif et pédagogique, certifiez la qualité des actions émises par les préfets, directeurs et comptables de la République Démocratique du Congo.
+                </p>
+              </div>
+
+              <div className="flex gap-2 self-stretch sm:self-auto flex-wrap sm:flex-nowrap">
+                <button
+                  onClick={handleSimulateActivity}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2.5 px-4 rounded-xl cursor-pointer shadow-xs whitespace-nowrap flex items-center gap-1 uppercase"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Simuler une activité
+                </button>
+                {userActivities.length > 0 && (
+                  <button
+                    onClick={handleClearLogs}
+                    className="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold text-xs py-2 px-3.5 rounded-xl cursor-pointer whitespace-nowrap flex items-center gap-1 uppercase"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Vider le registre
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* FILTERS FOR USER ACTIVITIES */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-3xs">
+              <div className="relative flex items-center bg-white rounded-xl border border-slate-250 px-3 py-2">
+                <Search className="w-4 h-4 text-slate-400 shrink-0 mr-2" />
+                <input
+                  type="text"
+                  placeholder="Rechercher par nom, école, actions..."
+                  value={logQuery}
+                  onChange={(e) => setLogQuery(e.target.value)}
+                  className="bg-transparent border-0 text-xs text-slate-850 placeholder-slate-450 focus:outline-hidden focus:ring-0 w-full font-semibold"
+                />
+              </div>
+
+              <div>
+                <select
+                  value={catFilter}
+                  onChange={(e) => setCatFilter(e.target.value)}
+                  className="bg-white border border-slate-250 text-xs font-bold text-slate-700 rounded-xl py-2 px-3.5 focus:ring-1 focus:ring-rose-500 shadow-2xs w-full h-[38px]"
+                >
+                  <option value="ALL">Toutes les catégories</option>
+                  <option value="PEDAGOGICAL">📚 Pédagogique</option>
+                  <option value="FINANCIAL">💸 Financier</option>
+                  <option value="SECURITY">🛡️ Sécurité</option>
+                  <option value="ADMINISTRATIVE">💼 Administratif</option>
+                </select>
+              </div>
+
+              <div>
+                <select
+                  value={qualFilter}
+                  onChange={(e) => setQualFilter(e.target.value)}
+                  className="bg-white border border-slate-250 text-xs font-bold text-slate-700 rounded-xl py-2 px-3.5 focus:ring-1 focus:ring-rose-500 shadow-2xs w-full h-[38px]"
+                >
+                  <option value="ALL">Toutes les qualités</option>
+                  <option value="Excellent">Qualité Excellente</option>
+                  <option value="Régulier">Qualité Régulière</option>
+                  <option value="Avertissement">Qualité Avertissement</option>
+                  <option value="Critique">Qualité Critique (Alerte)</option>
+                </select>
+              </div>
+            </div>
+
+            {/* AUDIT TIMELINE LEDGER */}
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
+              <div className="overflow-x-auto font-sans">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-150 text-[10px] uppercase font-mono font-black text-slate-500">
+                      <th className="py-3 px-4">Agent / Rôle</th>
+                      <th className="py-3 px-4">Établissement</th>
+                      <th className="py-3 px-4">Action effectuée</th>
+                      <th className="py-3 px-4">Catégorie</th>
+                      <th className="py-3 px-4 text-center">Qualité / Criticité</th>
+                      <th className="py-3 px-4 text-right">Date &amp; Heure CD</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-xs font-sans">
+                    {filteredActivities.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="py-10 text-center text-slate-400 font-bold bg-slate-50/50">
+                          Zéro log trouvé correspondant aux critères d'audit.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredActivities.map((act) => (
+                        <tr key={act.id} className="hover:bg-slate-50/40 transition-colors">
+                          <td className="py-3.5 px-4 font-sans">
+                            <span className="font-extrabold text-slate-800 block">{act.userName}</span>
+                            <span className="text-[10px] font-mono text-indigo-700 font-bold uppercase">{act.userRole}</span>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span className="font-bold text-slate-700 block">{act.schoolName}</span>
+                          </td>
+                          <td className="py-3.5 px-4 max-w-sm">
+                            <span className="font-bold text-slate-900 block">{act.action}</span>
+                            {act.details && (
+                              <span className="text-[10.5px] font-mono text-slate-500 block leading-tight mt-1 bg-slate-50 p-2 rounded-lg border border-slate-200">
+                                📝 {act.details}
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-4 uppercase font-mono text-[10px] font-extrabold">
+                            <span className={`inline-block px-2.5 py-0.5 rounded ${
+                              act.category === 'PEDAGOGICAL' ? 'bg-violet-50 text-violet-800 border border-violet-150' :
+                              act.category === 'FINANCIAL' ? 'bg-emerald-50 text-emerald-800 border border-emerald-150' :
+                              act.category === 'SECURITY' ? 'bg-orange-50 text-orange-850 border border-orange-150' :
+                              'bg-blue-50 text-blue-800 border border-blue-150'
+                            }`}>
+                              {act.category === 'PEDAGOGICAL' ? '📚 PÉDAGOGIQUE' :
+                               act.category === 'FINANCIAL' ? '💸 FINANCIER' :
+                               act.category === 'SECURITY' ? '🛡️ SÉCURITÉ' :
+                               '💼 ADMINISTRATIF'}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-center">
+                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[10px] font-black uppercase ${
+                              act.quality === 'Excellent' ? 'bg-emerald-50 text-emerald-700 border border-emerald-250' :
+                              act.quality === 'Régulier' ? 'bg-sky-50 text-sky-700 border border-sky-250' :
+                              act.quality === 'Avertissement' ? 'bg-amber-50 text-amber-800 border border-amber-250' :
+                              'bg-rose-50 text-rose-750 border border-rose-250'
+                            }`}>
+                              {act.quality}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-right font-mono text-[11px] text-slate-500 whitespace-nowrap">
+                            {act.timestamp}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/**************** SUB-TAB: EXPORTS DE RAPPORTS SCOLAIRES AU FORMAT EXCEL & CSV *****************/}
       {subTab === 'BACKUP_LOAD' && (
         <div className="space-y-6">
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-2">
-            <h4 className="font-extrabold text-slate-800 text-sm flex items-center gap-1.5">
-              <Database className="w-4.5 h-4.5 text-indigo-600" />
-              SÉCURISATION &amp; INTÉGRATION DES DONNÉES ENTIÈRES
-            </h4>
-            <p className="text-xs text-slate-500 leading-relaxed font-semibold">
-              Cette interface technique vous permet de copier l'intégralité de la base de données, d'exporter sous forme de rapports individuels ou de téléverser des fichiers de sauvegarde (.JSON) afin de restaurer les bases de données instantanément.
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-3 shadow-3xs">
+            <div className="flex items-center gap-2">
+              <span className="p-2.5 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-150">
+                <Database className="w-5 h-5" />
+              </span>
+              <div>
+                <h4 className="font-extrabold text-slate-800 text-base">
+                  CENTRE DE TÉLÉCHARGEMENT DE RAPPORTS SCOLAIRES (EXCEL / CSV)
+                </h4>
+                <div className="text-emerald-755 font-bold text-xs uppercase tracking-wider mt-0.5">
+                  Secrétariat Général de l'EPST • Système de Traitement National
+                </div>
+              </div>
+            </div>
+            
+            <p className="text-slate-600 leading-relaxed text-sm">
+              Conformément aux instructions ministérielles de l'EPST, 
+              <strong className="text-slate-850 font-bold"> les mécanismes complexes d'importation et d'exportation de fichiers techniques JSON ont été définitivement supprimés</strong> afin d'alléger l'espace de travail et d'éviter tout incident technique avec les enseignants.
+            </p>
+            <p className="text-slate-500 text-xs">
+              Seules les fiches d'extraction au format universel Tableur (ouvrables directement dans Microsoft Excel, Google Sheets, LibreOffice) sont maintenues ci-dessous pour l'impression des fiches ou la consolidation des statistiques provinciales.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 space-y-5 shadow-xs">
+            <div className="border-b border-slate-100 pb-3">
+              <h5 className="font-black text-sm text-slate-700 uppercase tracking-wide">
+                Extraction Directe des Registres d'Établissement (Format .CSV)
+              </h5>
+              <p className="text-xs text-slate-450 mt-1">
+                Cliquez sur le registre de votre choix pour lancer un téléchargement immédiat.
+              </p>
+            </div>
             
-            {/* Interactive File Import Zone (Drag & Drop + Click selector) */}
-            <div className="space-y-4">
-              <h5 className="font-extrabold text-xs text-slate-700 uppercase tracking-widest font-mono">1. Importer des données depuis un fichier</h5>
-              
-              <div
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                className={`border-2 border-dashed rounded-3xl p-8 text-center transition-all relative ${
-                  isDragOver 
-                    ? 'border-indigo-500 bg-indigo-50/40 scale-[1.01]' 
-                    : 'border-slate-300 hover:border-indigo-400 bg-slate-50/50'
-                }`}
-              >
-                <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-indigo-1.5">
-                  <Upload className="w-6 h-6" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 hover:border-emerald-300 transition-colors flex flex-col justify-between space-y-3">
+                <div>
+                  <div className="flex items-center gap-2 text-slate-800">
+                    <Building2 className="w-5 h-5 text-blue-600 shrink-0" />
+                    <span className="font-extrabold text-sm">Répertoire des Établissements</span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1 font-medium leading-relaxed">
+                    Extraction complète de la liste des écoles de la RDC enregistrées ou en attente d'homologation ministerielle par les antennes provinciales de l'EPST.
+                  </p>
                 </div>
-                
-                <p className="text-xs font-black text-slate-800 font-sans">
-                  Glissez-déposez le fichier de sauvegarde JSON ici
-                </p>
-                <p className="text-[10px] text-slate-450 font-medium font-sans mt-1">
-                  ou cliquez ci-dessous pour le chercher sur votre ordinateur
-                </p>
-
-                <div className="mt-4">
-                  <label className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 hover:scale-[1.01] active:scale-95 text-white font-black text-xs px-4 py-2 rounded-xl cursor-pointer shadow-md select-none transition-all">
-                    <Database className="w-3.5 h-3.5" />
-                    Choisir un fichier .JSON
-                    <input
-                      type="file"
-                      accept=".json"
-                      onChange={handleFileChange}
-                      className="hidden"
-                    />
-                  </label>
-                </div>
-
-                <div className="text-[9.5px] text-slate-400 font-mono mt-3 leading-relaxed">
-                  Format certifié : SGESC_RDC_SAUVEGARDE_...json
-                </div>
+                <button
+                  onClick={handleExportSchoolsCSV}
+                  className="w-full py-2.5 px-3 bg-emerald-650 hover:bg-emerald-755 text-white font-bold rounded-xl cursor-pointer text-center text-xs transition-all shadow-md uppercase"
+                >
+                  Télécharger le Fichier Excel (.CSV)
+                </button>
               </div>
 
-              {/* Status messages for importation accuracy */}
-              {importError && (
-                <div className="p-3.5 bg-red-50 border border-red-200 text-red-900 rounded-xl text-xs font-medium flex gap-2 items-start shadow-3xs">
-                  <AlertTriangle className="w-4 h-4 text-[#D32F2F] shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-black block text-red-950">Erreur d’importation :</span>
-                    <p className="mt-0.5 leading-relaxed">{importError}</p>
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 hover:border-emerald-300 transition-colors flex flex-col justify-between space-y-3">
+                <div>
+                  <div className="flex items-center gap-2 text-slate-800">
+                    <Users className="w-5 h-5 text-yellow-600 shrink-0" />
+                    <span className="font-extrabold text-sm">Registre National des Élèves</span>
                   </div>
+                  <p className="text-xs text-slate-500 mt-1 font-medium leading-relaxed">
+                    Téléchargez les identités scolaires, matricules nationaux, genres, classes et affectations scolaires de tous les élèves enregistrés en base.
+                  </p>
                 </div>
-              )}
+                <button
+                  onClick={handleExportStudentsCSV}
+                  className="w-full py-2.5 px-3 bg-emerald-650 hover:bg-emerald-755 text-white font-bold rounded-xl cursor-pointer text-center text-xs transition-all shadow-md uppercase"
+                >
+                  Télécharger le Fichier Excel (.CSV)
+                </button>
+              </div>
 
-              {importSuccess && (
-                <div className="p-3.5 bg-emerald-50 border border-emerald-250 text-emerald-900 rounded-xl text-xs font-medium flex gap-2 items-start shadow-3xs">
-                  <Check className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-black block text-emerald-950">Restauration certifiée :</span>
-                    <p className="mt-0.5 leading-relaxed">{importSuccess}</p>
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 hover:border-emerald-300 transition-colors flex flex-col justify-between space-y-3">
+                <div>
+                  <div className="flex items-center gap-2 text-slate-800">
+                    <CreditCard className="w-5 h-5 text-emerald-600 shrink-0" />
+                    <span className="font-extrabold text-sm">Rapports Financiers &amp; Versements</span>
                   </div>
+                  <p className="text-xs text-slate-500 mt-1 font-medium leading-relaxed">
+                    Audit comptable complet comportant l'historique de paiement des minervals régionaux, des frais d'inscription et des cotisations des élèves.
+                  </p>
                 </div>
-              )}
-            </div>
+                <button
+                  onClick={handleExportPaymentsCSV}
+                  className="w-full py-2.5 px-3 bg-emerald-650 hover:bg-emerald-755 text-white font-bold rounded-xl cursor-pointer text-center text-xs transition-all shadow-md uppercase"
+                >
+                  Télécharger le Fichier Excel (.CSV)
+                </button>
+              </div>
 
-            {/* Quick Export & Full Copier */}
-            <div className="space-y-4">
-              <h5 className="font-extrabold text-xs text-slate-700 uppercase tracking-widest font-mono">2. Exporter ou copier la base de données</h5>
-              
-              <div className="bg-white border border-slate-200 rounded-3xl p-5 space-y-4 shadow-3xs">
-                
-                <div className="space-y-2">
-                  <span className="text-[9px] uppercase font-mono tracking-widest text-[#D32F2F] font-black block">Copie presse-papiers instantanée</span>
-                  <div className="flex gap-2.5">
-                    <button
-                      onClick={handleCopyJSONToClipboard}
-                      className="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 border border-slate-250 text-slate-800 text-xs font-black rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-3xs"
-                    >
-                      <Copy className="w-4 h-4 text-indigo-650" />
-                      {copyState ? "Base copiée !" : "Copier toute la base"}
-                    </button>
-                    <button
-                      onClick={handleExportBackup}
-                      className="flex-1 py-3 px-4 bg-indigo-650 hover:bg-indigo-755 text-white text-xs font-black rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
-                    >
-                      <Download className="w-4 h-4" />
-                      Télécharger .JSON
-                    </button>
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 hover:border-emerald-300 transition-colors flex flex-col justify-between space-y-3">
+                <div>
+                  <div className="flex items-center gap-2 text-slate-800">
+                    <FileText className="w-5 h-5 text-violet-600 shrink-0" />
+                    <span className="font-extrabold text-sm">Évaluations &amp; Registre des Bulletins</span>
                   </div>
-                  {copyState && (
-                    <span className="text-[10px] text-indigo-700 font-extrabold text-center block bg-indigo-50 border border-indigo-150 py-1.5 rounded-lg animate-pulse font-sans">
-                      ✅ Le JSON entier a été copié ! Vous pouvez le coller pour l'échanger.
-                    </span>
-                  )}
+                  <p className="text-xs text-slate-500 mt-1 font-medium leading-relaxed">
+                    Registre des notes, des jours d'absences, de la conduite et des mentions délivrées pour les livrets scolaires certifiés par code QR.
+                  </p>
                 </div>
-
-                <div className="border-t border-slate-100 pt-4 space-y-2.5">
-                  <span className="text-[9px] uppercase font-mono tracking-widest text-slate-400 font-black block">Rapports individuels par module (CSV tableur)</span>
-                  
-                  <div className="grid grid-cols-2 gap-2 text-xs font-bold leading-none">
-                    <button
-                      onClick={handleExportSchoolsCSV}
-                      className="py-2.5 px-3 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl border border-slate-220 cursor-pointer text-left flex items-center gap-1.5 transition-all text-[11px]"
-                    >
-                      <Building2 className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                      <span>CSV Établissements</span>
-                    </button>
-
-                    <button
-                      onClick={handleExportStudentsCSV}
-                      className="py-2.5 px-3 bg-slate-50 hover:bg-slate-100 text-slate-705 rounded-xl border border-slate-220 cursor-pointer text-left flex items-center gap-1.5 transition-all text-[11px]"
-                    >
-                      <Users className="w-3.5 h-3.5 text-yellow-600 shrink-0" />
-                      <span>CSV Élèves inscrits</span>
-                    </button>
-
-                    <button
-                      onClick={handleExportPaymentsCSV}
-                      className="py-2.5 px-3 bg-slate-50 hover:bg-slate-100 text-slate-705 rounded-xl border border-slate-220 cursor-pointer text-left flex items-center gap-1.5 transition-all text-[11px]"
-                    >
-                      <CreditCard className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                      <span>CSV Rapports de caisse</span>
-                    </button>
-
-                    <button
-                      onClick={handleExportBulletinsCSV}
-                      className="py-2.5 px-3 bg-slate-50 hover:bg-slate-100 text-slate-705 rounded-xl border border-slate-220 cursor-pointer text-left flex items-center gap-1.5 transition-all text-[11px]"
-                    >
-                      <FileText className="w-3.5 h-3.5 text-violet-600 shrink-0" />
-                      <span>CSV Fiches Bulletins</span>
-                    </button>
-                  </div>
-                </div>
-
+                <button
+                  onClick={handleExportBulletinsCSV}
+                  className="w-full py-2.5 px-3 bg-emerald-650 hover:bg-emerald-755 text-white font-bold rounded-xl cursor-pointer text-center text-xs transition-all shadow-md uppercase"
+                >
+                  Télécharger le Fichier Excel (.CSV)
+                </button>
               </div>
             </div>
 
+            <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-150 text-slate-500 text-xs font-medium flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping shrink-0" />
+              <span>Système National de l'EPST en communication cryptée SSL permanente • Les extractions CSV sont datées en temps réel.</span>
+            </div>
           </div>
         </div>
       )}

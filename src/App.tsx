@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, School, Student, Payment, Bulletin, UserRole, ArchivedFile } from './types';
+import { User, School, Student, Payment, Bulletin, UserRole, ArchivedFile, UserActivity } from './types';
 import { INITIAL_SCHOOLS, INITIAL_STUDENTS, INITIAL_PAYMENTS, INITIAL_BULLETINS } from './constants';
 import { PatrioticBackground, CongoFlagIcon, CongoCoatOfArms } from './components/CongoTheme';
 import { QRScannerMock } from './components/QRScannerMock';
@@ -78,11 +78,122 @@ export default function App() {
     const local = localStorage.getItem('sgesc_all_users');
     if (local) return JSON.parse(local);
     return [
-      { fullName: "Prof. Kabose Augustin", phone: "+243 812 345 678", role: "Enseignant", schoolId: "sc-1", email: "", timestamp: "25/05/2026 09:12:00", isOnline: true },
-      { fullName: "Mme. Jolie Masengo", phone: "+243 998 765 432", role: "Comptable", schoolId: "sc-1", email: "", timestamp: "26/05/2026 10:44:02", isOnline: false },
-      { fullName: "Monsieur l'Abbé Pierre Lwamba", phone: "+243 854 321 098", role: "Préfet des études", schoolId: "sc-2", email: "", timestamp: "27/05/2026 11:21:50", isOnline: true },
-      { fullName: "Sœur Jeanne d'Arc Mapasa", phone: "+243 897 654 321", role: "Directeur", schoolId: "sc-3", email: "", timestamp: "28/05/2026 07:15:22", isOnline: true },
-      { fullName: "Chef d'Antenne National", phone: "Superviseur RDC", role: "Administrateur", schoolId: "sc-1", email: "birekeidea@gmail.com", timestamp: "28/05/2026 08:00:00", isOnline: true }
+      { fullName: "Révérend Père Préfet Jean-Michel", phone: "+243 815 112 233", role: "Préfet des études", schoolId: "sc-1", email: "jean.michel@boboto.cd", timestamp: "03/06/2026 08:30:15", isOnline: true },
+      { fullName: "Sœur Préfète Aimée Mbuyi", phone: "+243 994 482 110", role: "Préfet des études", schoolId: "sc-2", email: "aimee.mbuyi@kabambare.com", timestamp: "02/06/2026 14:22:10", isOnline: false },
+      { fullName: "Monsieur le Préfet Pascal Mupende", phone: "+243 853 445 566", role: "Préfet des études", schoolId: "sc-3", email: "pascal.mupende@instgoma.net", timestamp: "02/06/2026 11:05:00", isOnline: true },
+      { fullName: "Monseigneur l’Abbé Sylvain Nkulu", phone: "+243 892 783 911", role: "Préfet des études", schoolId: "sc-4", email: "sylvain.nkulu@imara.cd", timestamp: "01/06/2026 16:40:12", isOnline: true },
+      { fullName: "Père Préfet Jean-Claude Baguma", phone: "+243 812 554 990", role: "Préfet des études", schoolId: "sc-5", email: "jc.baguma@alfajiri.org", timestamp: "03/06/2026 17:15:00", isOnline: true },
+      { fullName: "Préfet Thaddée Lihamba", phone: "+243 991 223 344", role: "Préfet des études", schoolId: "sc-6", email: "thaddee.lihamba@maele.org", timestamp: "03/06/2026 10:20:00", isOnline: false },
+      { fullName: "Mère Supérieure Hélène Ngalula", phone: "+243 855 667 788", role: "Préfet des études", schoolId: "sc-7", email: "helene.ngalula@bosangani.cd", timestamp: "03/06/2026 15:10:00", isOnline: true },
+      { fullName: "Prof. Kabose Augustin", phone: "+243 812 345 678", role: "Enseignant", schoolId: "sc-1", email: "kabose@boboto.cd", timestamp: "25/05/2026 09:12:00", isOnline: true },
+      { fullName: "Mme. Jolie Masengo", phone: "+243 998 765 432", role: "Comptable", schoolId: "sc-1", email: "jolie.masengo@boboto.cd", timestamp: "26/05/2026 10:44:02", isOnline: false },
+      { fullName: "Chef d'Antenne National (Admin)", phone: "Superviseur RDC", role: "Administrateur", schoolId: "sc-1", email: "birekeidea@gmail.com", timestamp: "03/06/2026 08:00:00", isOnline: true }
+    ];
+  });
+
+  const [userActivities, setUserActivities] = useState<UserActivity[]>(() => {
+    const local = localStorage.getItem('sgesc_user_activities');
+    if (local) return JSON.parse(local);
+    return [
+      {
+        id: "act-1",
+        userName: "Révérend Père Préfet Jean-Michel",
+        userRole: "Préfet des études",
+        schoolName: "Collège Boboto",
+        action: "Connexion sécurisée au portail d'établissement",
+        timestamp: "03/06/2026 08:30:15",
+        category: "SECURITY",
+        quality: "Excellent",
+        details: "Session ouverte avec succès depuis Kinshasa/Gombe IP: 197.243.2.45"
+      },
+      {
+        id: "act-2",
+        userName: "Révérend Père Préfet Jean-Michel",
+        userRole: "Préfet des études",
+        schoolName: "Collège Boboto",
+        action: "Certification numérique d'un bulletin scolaire",
+        timestamp: "03/06/2026 09:12:44",
+        category: "PEDAGOGICAL",
+        quality: "Excellent",
+        details: "Validation de la fiche de délibération de Placide Mwamba Kabongo (4ème Des humanités)"
+      },
+      {
+        id: "act-3",
+        userName: "Sœur Préfète Aimée Mbuyi",
+        userRole: "Préfet des études",
+        schoolName: "Lycée Kabambare",
+        action: "Versement bancaire enregistré",
+        timestamp: "02/06/2026 14:22:10",
+        category: "FINANCIAL",
+        quality: "Excellent",
+        details: "Bordereau REC-2026-10042 de 45 USD pour Grâce Kabange Ilunga approuvé par la comptabilité."
+      },
+      {
+        id: "act-4",
+        userName: "Monsieur le Préfet Pascal Mupende",
+        userRole: "Préfet des études",
+        schoolName: "Institut de Goma",
+        action: "Modification d'une fiche de cotation",
+        timestamp: "02/06/2026 11:05:00",
+        category: "PEDAGOGICAL",
+        quality: "Régulier",
+        details: "Ajustement des notes d'interrogation en Mathématiques pour le niveau 3ème Des humanités."
+      },
+      {
+        id: "act-5",
+        userName: "Monseigneur l’Abbé Sylvain Nkulu",
+        userRole: "Préfet des études",
+        schoolName: "Collège Imara",
+        action: "Inmatriculation d'un nouvel élève",
+        timestamp: "01/06/2026 16:40:12",
+        category: "ADMINISTRATIVE",
+        quality: "Excellent",
+        details: "Nouvelle immatriculation nationale créée pour l'élève Sarah Mpiana Kasanda."
+      },
+      {
+        id: "act-6",
+        userName: "Père Préfet Jean-Claude Baguma",
+        userRole: "Préfet des études",
+        schoolName: "Collège Alfajiri",
+        action: "Soumission des structures scolaires",
+        timestamp: "03/06/2026 17:15:30",
+        category: "ADMINISTRATIVE",
+        quality: "Excellent",
+        details: "Indexation réussie des options organisées: Commerciale et Math-Physique."
+      },
+      {
+        id: "act-7",
+        userName: "Mère Supérieure Hélène Ngalula",
+        userRole: "Préfet des études",
+        schoolName: "Lycée Bosangani",
+        action: "Préparation de leçon enregistrée",
+        timestamp: "03/06/2026 15:22:00",
+        category: "PEDAGOGICAL",
+        quality: "Excellent",
+        details: "Fiche didactique 'Introduction à la comptabilité générale' validée."
+      },
+      {
+        id: "act-8",
+        userName: "Préfet Thaddée Lihamba",
+        userRole: "Préfet des études",
+        schoolName: "Institut Maele",
+        action: "Demande d'homologation d'établissement",
+        timestamp: "03/06/2026 10:20:11",
+        category: "SECURITY",
+        quality: "Régulier",
+        details: "Formulaire d'enregistrement de l'école soumis au contrôle central de l'EPST."
+      },
+      {
+        id: "act-9",
+        userName: "Mme. Jolie Masengo",
+        userRole: "Comptable",
+        schoolName: "Collège Boboto",
+        action: "Clôture de caisse trimestrielle",
+        timestamp: "31/05/2026 15:30:00",
+        category: "FINANCIAL",
+        quality: "Excellent",
+        details: "Génération du rapport global des versements effectués pour la session de Mai."
+      }
     ];
   });
 
@@ -127,6 +238,10 @@ export default function App() {
   }, [allUsers]);
 
   useEffect(() => {
+    localStorage.setItem('sgesc_user_activities', JSON.stringify(userActivities));
+  }, [userActivities]);
+
+  useEffect(() => {
     if (currentUser) {
       localStorage.setItem('sgesc_user', JSON.stringify(currentUser));
       if (currentUser.schoolId === 'all') {
@@ -157,6 +272,21 @@ export default function App() {
 
   const handleLogin = (userData: User) => {
     setCurrentUser(userData);
+
+    // Dynamic Activity Logging for Security Audits
+    const userSchool = schools.find(s => s.id === userData.schoolId);
+    const newActivity: UserActivity = {
+      id: `act-${Date.now()}`,
+      userName: userData.fullName,
+      userRole: userData.role,
+      schoolName: userSchool ? userSchool.name : (userData.role === 'Administrateur' ? "Secrétariat Général EPST" : "Établissement RDC"),
+      action: "Connexion réussie au portail d'accès",
+      timestamp: new Date().toLocaleString('fr-CD'),
+      category: 'SECURITY',
+      quality: 'Excellent',
+      details: `Session sécurisée initiée pour le rôle: ${userData.role}`
+    };
+    setUserActivities(prev => [newActivity, ...prev]);
 
     // Register the user to tracked database
     setAllUsers(prev => {
@@ -196,6 +326,30 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    if (currentUser) {
+      // Mark offline in allUsers
+      setAllUsers(prev => prev.map(u => {
+        if (u.fullName.toLowerCase() === currentUser.fullName.toLowerCase() || (currentUser.email && u.email === currentUser.email)) {
+          return { ...u, isOnline: false };
+        }
+        return u;
+      }));
+
+      // Log activity
+      const userSchool = schools.find(s => s.id === currentUser.schoolId);
+      const newActivity: UserActivity = {
+        id: `act-out-${Date.now()}`,
+        userName: currentUser.fullName,
+        userRole: currentUser.role,
+        schoolName: userSchool ? userSchool.name : (currentUser.role === 'Administrateur' ? "Secrétariat Général EPST" : "Établissement RDC"),
+        action: "Déconnexion volontaire",
+        timestamp: new Date().toLocaleString('fr-CD'),
+        category: 'SECURITY',
+        quality: 'Excellent',
+        details: "Fermeture de session et retour sécurisé."
+      };
+      setUserActivities(prev => [newActivity, ...prev]);
+    }
     setCurrentUser(null);
   };
 
@@ -712,6 +866,8 @@ export default function App() {
                 setPayments={setPayments}
                 bulletins={bulletins}
                 setBulletins={setBulletins}
+                userActivities={userActivities}
+                setUserActivities={setUserActivities}
               />
             )}
 
