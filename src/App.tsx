@@ -555,7 +555,7 @@ export default function App() {
                 }`}
               >
                 <Handshake className="w-4 h-4 shrink-0" />
-                🤝 Portail d'Entente
+                🛡️ Admin Centrale (Agents &amp; Écoles)
               </button>
             )}
           </nav>

@@ -556,7 +556,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           }`}
         >
           <Users className="w-3.5 h-3.5" />
-          <span>Membres &amp; Habilitations ({allUsers.length})</span>
+          <span>👤 Utilisateurs &amp; Agents Connectés ({allUsers.length})</span>
         </button>
 
         <button
@@ -1137,7 +1137,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   <input
                     type="text"
                     required
-                    placeholder="Définissez le mot de passe (Ex: 012000)"
+                    placeholder="Définissez la clé d'accès confidentielle"
                     value={uPassword}
                     onChange={(e) => setUPassword(e.target.value)}
                     className="w-full rounded-xl border border-slate-300 py-2.5 px-3.5 text-xs focus:ring-1 focus:ring-sky-500 font-bold text-slate-850 bg-white"

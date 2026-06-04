@@ -227,23 +227,23 @@ const getBulletinTheme = (classLevel: string, option: string) => {
     sectionIconBg = 'bg-violet-50 text-violet-700';
   }
 
-  let containerBg = 'bg-amber-50/5';
+  let containerBg = 'bg-[#fffbeb]'; // Solid amber-50
   let outerBorder = 'border border-slate-200 rounded-xl';
   let titleBadgeStyle = 'px-3 py-1 font-mono tracking-widest text-[10px] uppercase font-black bg-slate-100 border text-slate-700 rounded-lg';
   let layoutAddon = '';
 
   if (classLevel && (classLevel.startsWith('1') || classLevel.startsWith('2'))) {
-    containerBg = 'bg-sky-50/10';
+    containerBg = 'bg-[#f0f9ff]'; // Solid sky-50
     outerBorder = 'border-2 border-dashed border-sky-300 rounded-3xl';
     titleBadgeStyle = 'px-3 py-1 bg-sky-100 text-sky-850 border border-sky-200 text-[9.5px] uppercase font-bold rounded-full';
     layoutAddon = 'relative before:absolute before:inset-y-0 before:left-0 before:w-1 text-slate-800';
   } else if (classLevel && (classLevel.startsWith('3') || classLevel.startsWith('4'))) {
     containerBg = 'bg-white';
-    outerBorder = 'border-4 border-double border-slate-700/80 rounded-none';
+    outerBorder = 'border-4 border-double border-slate-705/80 rounded-none';
     titleBadgeStyle = 'px-3 py-1.5 bg-slate-900 text-white font-mono uppercase tracking-widest text-[9px] font-bold rounded-none';
     layoutAddon = 'shadow-xs ring-4 ring-slate-100';
   } else if (classLevel && (classLevel.startsWith('5') || classLevel.startsWith('6'))) {
-    containerBg = 'bg-gradient-to-br from-yellow-50/5 via-white to-amber-50/10';
+    containerBg = 'bg-gradient-to-br from-[#fefbeb] via-white to-[#fff7ed]'; // Solid gradient
     outerBorder = 'border-[5px] border-double border-yellow-500/70 rounded-2xl';
     titleBadgeStyle = 'px-4 py-1.5 bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 text-slate-950 border border-yellow-600 text-[10px] font-black tracking-widest uppercase rounded-xl shadow-xs';
     layoutAddon = 'p-4 md:p-8';
@@ -727,11 +727,13 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
       let canvas;
       try {
         canvas = await html2canvas(el, {
-          scale: 2,
+          scale: 3, // Ultra high resolution image quality
           useCORS: true,
           allowTaint: false,
           backgroundColor: '#ffffff',
           logging: false,
+          scrollX: 0,
+          scrollY: 0,
         });
       } finally {
         window.getComputedStyle = originalGetComputedStyle;
@@ -803,11 +805,13 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
       let canvas;
       try {
         canvas = await html2canvas(el, {
-          scale: 1.5,
+          scale: 2.5, // Crisp high precision scaling for archival records
           useCORS: true,
           allowTaint: false,
           backgroundColor: '#ffffff',
           logging: false,
+          scrollX: 0,
+          scrollY: 0,
         });
       } finally {
         window.getComputedStyle = originalGetComputedStyle;
@@ -1734,78 +1738,83 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
               {/* Print Area core scroll */}
               <div 
                 id="school-bulletin-printable" 
-                className={`flex-1 overflow-y-auto p-4 md:p-8 space-y-6 transition-all relative ${theme.containerBg} ${theme.outerBorder} ${theme.layoutAddon}`}
+                className={`flex-1 overflow-y-auto transition-all ${theme.containerBg} ${theme.outerBorder} ${theme.layoutAddon} shadow-inner`}
               >
-                
-                {/* Armoiries et Drapeau en fond filigrane - HAUTEMENT VISIBLE */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-                  <CongoCoatOfArms className="w-[450px] h-[450px]" opacityClassName="opacity-[0.62]" />
-                </div>
+                <div className="relative w-full min-h-full p-4 md:p-8 space-y-6 flex flex-col justify-start">
+                  
+                  {/* Official RDC Tricolor Banner Line */}
+                  <div className="absolute top-0 inset-x-0 h-2 bg-gradient-to-r from-sky-400 via-yellow-400 to-red-500 z-20" />
 
-                {/* RDC State Header */}
-                <div className="flex flex-col sm:flex-row justify-between items-center text-center sm:text-left border-b-2 border-slate-800 pb-4 gap-4 relative z-10">
-                  <div className="flex flex-col sm:flex-row items-center gap-4">
-                    <CongoCoatOfArms className="w-16 h-16 shrink-0" opacityClassName="opacity-100" />
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-center sm:justify-start gap-1.5">
-                        <CongoFlagIcon className="w-8 h-5 rounded-xs shrink-0" />
-                        <span className="text-[10px] font-black tracking-wide text-slate-800 font-sans">RÉPUBLIQUE DÉMOCRATIQUE DU CONGO</span>
+                  {/* Armoiries et Drapeau en fond filigrane - HAUTEMENT VISIBLE ET PROPRE */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+                    <CongoCoatOfArms className="w-[460px] h-[460px]" opacityClassName="opacity-[0.38] mix-blend-multiply" />
+                  </div>
+
+                  {/* RDC State Header */}
+                  <div className="flex flex-col sm:flex-row justify-between items-center text-center sm:text-left border-b-2 border-blue-600 pb-5 gap-4 relative z-10 pt-2">
+                    <div className="flex flex-col sm:flex-row items-center gap-4">
+                      <CongoCoatOfArms className="w-20 h-20 shrink-0 drop-shadow-sm" opacityClassName="opacity-100" />
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-center sm:justify-start gap-1.5">
+                          <CongoFlagIcon className="w-8 h-5 rounded-xs shrink-0 shadow-xs" />
+                          <span className="text-[12px] font-black tracking-widest text-slate-900 font-sans uppercase">RÉPUBLIQUE DÉMOCRATIQUE DU CONGO</span>
+                        </div>
+                        <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-600 font-sans leading-tight">MINISTÈRE DE L’ÉDUCATION NATIONALE ET NOUVELLE CITOYENNETÉ &bull; EPST</h4>
+                        <p className={`text-[17px] font-black tracking-tight ${theme.primaryText} drop-shadow-3xs uppercase`}>{schoolObj.name}</p>
+                        <p className="text-[10px] text-slate-600 font-mono">
+                          PROVINCE SCOLAIRE: <span className="font-extrabold text-blue-900">{schoolObj.province.toUpperCase()}</span> &bull; CODE NATIONALE RDC: <span className="font-mono text-red-650 font-black">{schoolObj.nationalCode}</span>
+                        </p>
                       </div>
-                      <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-500 font-sans">MINISTÈRE DE L’ENSEIGNEMENT PRIMAIRE, SECONDAIRE ET TECHNIQUE</h4>
-                      <p className={`text-[15px] font-extrabold tracking-tight ${theme.primaryText}`}>{schoolObj.name}</p>
-                      <p className="text-[9px] text-slate-550 font-mono">
-                        PROVINCE: <span className="font-extrabold text-slate-850">{schoolObj.province}</span> &bull; CODE ÉTABLISSEMENT RDC: <span className="font-mono text-slate-800 font-bold">{schoolObj.nationalCode}</span>
-                      </p>
+                    </div>
+
+                    <div className="text-center sm:text-right border-t sm:border-t-0 sm:border-l border-slate-200 pt-3 sm:pt-0 sm:pl-4">
+                      <span className="text-[11px] uppercase font-mono tracking-widest text-[#D32F2F] font-black block">BULLETIN DE NOTES OFFICIEL</span>
+                      <span className="text-[9.5px] font-mono font-black bg-blue-50 text-blue-900 px-2.5 py-1 mt-1 inline-block rounded-lg border border-blue-150">Ref: SGESC-{activeBulletin.id}</span>
+                      <p className="text-[10.5px] text-slate-705 mt-1 font-extrabold font-mono">Année Scolaire: {activeBulletin.academicYear}</p>
                     </div>
                   </div>
 
-                  <div className="text-center sm:text-right">
-                    <span className="text-[10px] uppercase font-mono tracking-widest text-[#D32F2F] font-black block">BULLETIN DE NOTES DE L'ÉLÈVE</span>
-                    <span className="text-[9px] font-mono font-bold bg-slate-100 px-2 py-0.5 rounded border border-slate-200 mt-1 inline-block">Ref RDC: {activeBulletin.id}</span>
-                    <p className="text-[9px] text-slate-550 mt-1 font-mono">Année Scolaire: {activeBulletin.academicYear}</p>
-                  </div>
-                </div>
+                  {/* Matricule information of pupils */}
+                  <div className="space-y-4 relative z-10">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs bg-white/70 backdrop-blur-xs p-4 rounded-xl border border-blue-200/80 shadow-xs relative overflow-hidden">
+                      <div className="absolute top-0 bottom-0 left-0 w-1.5 bg-blue-600" />
+                      <div>
+                        <span className="text-[9px] uppercase font-mono text-slate-400 block font-bold tracking-wider">Identité de l'apprenant</span>
+                        <span className="font-black text-blue-950 block text-base uppercase">{displayName}</span>
+                        <span className="text-[9.5px] text-slate-600 font-mono">Sexe: <span className="font-extrabold text-slate-900">{genderText}</span> &bull; Matricule: <span className="font-black text-blue-800">{activeBulletin.studentId}</span></span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] uppercase font-mono text-slate-400 block font-bold tracking-wider">Niveau &bull; Section d'études</span>
+                        <span className={`text-[13px] block font-black text-slate-900 uppercase`}>{activeBulletin.classLevel}</span>
+                        <span className={`text-[10px] font-mono px-2.5 py-0.5 mt-1.5 inline-block rounded-md border font-black uppercase ${theme.badgeColor}`}>
+                          Option: {activeBulletin.option}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] uppercase font-mono text-slate-400 block font-bold tracking-wider">Évaluation de conduite / Présence</span>
+                        <span className="text-slate-900 font-extrabold block text-[13px] mt-0.5">Conduite: <span className="text-emerald-700 font-black">{activeBulletin.conduct}</span></span>
+                        <span className="text-[10px] text-slate-600 font-bold font-mono">Absence enregistrée: <span className="text-red-600 font-black">{activeBulletin.daysAbsent}</span> jours</span>
+                      </div>
+                    </div>
 
-                {/* Matricule information of pupils */}
-                <div className="space-y-4 relative z-10">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs bg-white/95 backdrop-blur-2xs p-3.5 rounded-xl border border-slate-200 shadow-3xs">
-                    <div>
-                      <span className="text-[8.5px] uppercase font-mono text-slate-400 block font-bold">Identité de l'apprenant</span>
-                      <span className="font-black text-slate-900 block text-sm">{displayName}</span>
-                      <span className="text-[9px] text-slate-550 font-mono">Sexe: {genderText} &bull; Matricule: {activeBulletin.studentId}</span>
-                    </div>
-                    <div>
-                      <span className="text-[8.5px] uppercase font-mono text-slate-400 block font-bold">Niveau &bull; Section d'études</span>
-                      <span className={`text-xs block ${theme.headingFont}`}>{activeBulletin.classLevel}</span>
-                      <span className={`text-[9.5px] font-mono px-2 py-0.5 mt-0.5 inline-block rounded-md border font-semibold ${theme.badgeColor}`}>
-                        Option: {activeBulletin.option}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-[8.5px] uppercase font-mono text-slate-400 block font-bold">Évaluation de conduite</span>
-                      <span className="text-slate-800 font-extrabold block">Conduite: {activeBulletin.conduct}</span>
-                      <span className="text-[10px] text-slate-500 font-semibold font-mono">Absence enregistrée: {activeBulletin.daysAbsent} jours</span>
-                    </div>
-                  </div>
-
-                  {/* Official RDC Grades Table matrix */}
-                  <div className="overflow-x-auto bg-white/95 backdrop-blur-2xs rounded-xl border border-slate-350 p-1">
+                    {/* Official RDC Grades Table matrix */}
+                    <div className="overflow-x-auto bg-white/70 backdrop-blur-xs rounded-xl border border-blue-200 shadow-xs p-1">
                     <table className="w-full text-[10px] text-left border-collapse border border-slate-300">
                       <thead>
                         <tr className={`border border-slate-400 divide-x divide-slate-300 font-black text-center ${theme.tableHeaderBg} ${theme.tableHeaderTextColor}`}>
-                          <th rowSpan={2} className="py-2.5 px-3 text-left w-64 border border-slate-300 uppercase tracking-wider font-bold">MATIÈRES ENSEIGNÉES EN SECONDAIRE</th>
-                          <th rowSpan={2} className="py-2.5 px-1 bg-slate-100/60 border border-slate-300">MAX Période</th>
-                          <th colSpan={3} className="py-1 border border-slate-300 uppercase tracking-widest text-[#007FFF] text-[8.5px]">1er SEMESTRE (Points Obtenus)</th>
-                          <th colSpan={3} className="py-1 border border-slate-300 uppercase tracking-widest text-[#D32F2F] text-[8.5px]">2ème SEMESTRE (Points Obtenus)</th>
-                          <th rowSpan={2} className="py-2.5 px-1 bg-yellow-100 text-slate-950 font-black border border-slate-350 text-[10.5px]">TOTAL GÉNÉRAL</th>
+                          <th rowSpan={2} className="py-3.5 px-3 text-left w-64 border border-slate-300 uppercase tracking-wider font-extrabold text-blue-950">MATIÈRES ENSEIGNÉES EN SECONDAIRE</th>
+                          <th rowSpan={2} className="py-3.5 px-1 bg-slate-50 border border-slate-300 w-20 text-[9px] uppercase font-bold text-slate-700">MAX Période</th>
+                          <th colSpan={3} className="py-1.5 border border-slate-300 bg-sky-50 text-sky-950 uppercase tracking-widest text-[9px] font-black">1er SEMESTRE (Points Obtenus)</th>
+                          <th colSpan={3} className="py-1.5 border border-slate-300 bg-red-50/80 text-red-950 uppercase tracking-widest text-[9px] font-black">2ème SEMESTRE (Points Obtenus)</th>
+                          <th rowSpan={2} className="py-3.5 px-1 bg-gradient-to-br from-yellow-300 to-amber-300 text-slate-950 font-black border border-slate-350 text-[11px] w-28">TOTAL GÉNÉRAL</th>
                         </tr>
                         <tr className="border border-slate-300 divide-x divide-slate-200 text-[8.5px] font-mono bg-slate-50/80">
-                          <th className="py-1 border border-slate-300">1ère P.</th>
-                          <th className="py-1 border border-slate-300">2ème P.</th>
-                          <th className="py-1 bg-blue-50/50 border border-slate-300 text-blue-900 font-bold">Examen 1</th>
-                          <th className="py-1 border border-slate-300">3ème P.</th>
-                          <th className="py-1 border border-slate-300">4ème P.</th>
-                          <th className="py-1 bg-rose-50/50 border border-slate-300 text-rose-900 font-bold">Examen 2</th>
+                          <th className="py-1 border border-slate-300 bg-sky-50/30">1ère P.</th>
+                          <th className="py-1 border border-slate-300 bg-sky-50/30">2ème P.</th>
+                          <th className="py-1 bg-blue-100/50 border border-slate-300 text-blue-905 font-black">EXAMEN 1</th>
+                          <th className="py-1 border border-slate-300 bg-red-50/20">3ème P.</th>
+                          <th className="py-1 border border-slate-300 bg-red-50/20">4ème P.</th>
+                          <th className="py-1 bg-red-100/50 border border-slate-300 text-red-905 font-black">EXAMEN 2</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-250 border border-slate-300 text-[10px]">
@@ -1822,49 +1831,49 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
                           const isPassing = subtotal >= maxAll * 0.5;
 
                           return (
-                            <tr key={idx} className="hover:bg-slate-50/50 font-medium divide-x divide-slate-200 text-center text-[11px]">
-                              <td className="py-2 px-3 text-left font-sans font-extrabold text-slate-850 border-r border-slate-300">{g.courseName}</td>
-                              <td className="py-2 px-1 font-mono font-bold text-slate-500 border-r border-slate-300 bg-slate-50/30">{g.maxPoints}</td>
-                              <td className="py-2 px-1 font-mono">{g.obtainedFirstPeriod}</td>
-                              <td className="py-2 px-1 font-mono">{g.obtainedSecondPeriod}</td>
-                              <td className="py-2 px-1 font-mono bg-blue-50/20 text-blue-900 font-bold">{g.obtainedExamFirstSemester}</td>
-                              <td className="py-2 px-1 font-mono">{g.obtainedThirdPeriod}</td>
-                              <td className="py-2 px-1 font-mono">{g.obtainedFourthPeriod}</td>
-                              <td className="py-2 px-1 font-mono bg-rose-50/20 text-rose-900 font-bold">{g.obtainedExamSecondSemester}</td>
-                              <td className={`py-2 px-1 font-mono font-black border-l border-slate-300 ${isPassing ? 'text-emerald-850 bg-emerald-50/25' : 'text-red-750 bg-red-50/25'}`}>
-                                {subtotal} / {maxAll}
+                            <tr key={idx} className="hover:bg-slate-50/50 font-medium divide-x divide-slate-200 text-center text-[11.5px]">
+                              <td className="py-2.5 px-3 text-left font-sans font-black text-slate-850 border-r border-slate-300">{g.courseName}</td>
+                              <td className="py-2.5 px-1 font-mono font-bold text-slate-600 border-r border-slate-300 bg-slate-100/30">{g.maxPoints}</td>
+                              <td className="py-2.5 px-1 font-mono">{g.obtainedFirstPeriod}</td>
+                              <td className="py-2.5 px-1 font-mono">{g.obtainedSecondPeriod}</td>
+                              <td className="py-2.5 px-1 font-mono bg-blue-50/40 text-blue-900 font-extrabold">{g.obtainedExamFirstSemester}</td>
+                              <td className="py-2.5 px-1 font-mono">{g.obtainedThirdPeriod}</td>
+                              <td className="py-2.5 px-1 font-mono">{g.obtainedFourthPeriod}</td>
+                              <td className="py-2.5 px-1 font-mono bg-red-50/40 text-red-900 font-extrabold">{g.obtainedExamSecondSemester}</td>
+                              <td className={`py-2.5 px-1 font-mono font-black border-l border-slate-300 text-[12px] ${isPassing ? 'text-emerald-900 bg-emerald-50/45' : 'text-red-750 bg-red-50/45'}`}>
+                                {subtotal} <span className="text-[10px] text-slate-450 font-normal">/ {maxAll}</span>
                               </td>
                             </tr>
                           );
                         })}
 
                         {/* Computed Metrics Block */}
-                        <tr className="bg-slate-100 font-black text-[11px] divide-x divide-slate-300 text-center border-t border-slate-300">
-                          <td className="py-3 px-3 text-left uppercase font-black">TOTAL GÉNÉRAL DE LA CLASSE</td>
-                          <td className="py-3 px-1 font-mono text-slate-650 bg-slate-50">
+                        <tr className="bg-slate-100 font-black text-[11px] divide-x divide-slate-300 text-center border-t-2 border-slate-400">
+                          <td className="py-3 px-3 text-left uppercase font-black text-blue-950">TOTAL GÉNÉRAL DE LA CLASSE</td>
+                          <td className="py-3 px-1 font-mono text-slate-700 bg-slate-105">
                             {activeBulletin.grades.reduce((sum, g) => sum + g.maxPoints, 0)}
                           </td>
                           <td className="py-3 px-1 font-mono">{activeBulletin.grades.reduce((sum, g) => sum + g.obtainedFirstPeriod, 0)}</td>
                           <td className="py-3 px-1 font-mono">{activeBulletin.grades.reduce((sum, g) => sum + g.obtainedSecondPeriod, 0)}</td>
-                          <td className="py-3 px-1 bg-blue-50/40 font-mono text-blue-900">{activeBulletin.grades.reduce((sum, g) => sum + g.obtainedExamFirstSemester, 0)}</td>
+                          <td className="py-3 px-1 bg-blue-50/70 font-mono text-blue-900">{activeBulletin.grades.reduce((sum, g) => sum + g.obtainedExamFirstSemester, 0)}</td>
                           <td className="py-3 px-1 font-mono">{activeBulletin.grades.reduce((sum, g) => sum + g.obtainedThirdPeriod, 0)}</td>
                           <td className="py-3 px-1 font-mono">{activeBulletin.grades.reduce((sum, g) => sum + g.obtainedFourthPeriod, 0)}</td>
-                          <td className="py-3 px-1 bg-rose-50/40 font-mono text-rose-900">{activeBulletin.grades.reduce((sum, g) => sum + g.obtainedExamSecondSemester, 0)}</td>
-                          <td className="py-3 px-1 font-mono text-slate-900 bg-yellow-100 flex items-center justify-center font-black text-[12px]">
-                            {metrics.obtained} / {metrics.available}
+                          <td className="py-3 px-1 bg-rose-50/70 font-mono text-rose-900">{activeBulletin.grades.reduce((sum, g) => sum + g.obtainedExamSecondSemester, 0)}</td>
+                          <td className="py-3 px-1 font-mono text-slate-900 bg-gradient-to-r from-amber-200 to-yellow-200 flex items-center justify-center font-black text-[13px] border-l border-slate-300">
+                            {metrics.obtained} <span className="text-[10px] text-slate-600 font-normal ml-1">/ {metrics.available}</span>
                           </td>
                         </tr>
 
                         {/* Percentages and Rankings row */}
-                        <tr className="bg-slate-800 text-white font-black text-center text-xs divide-x divide-slate-600">
-                          <td className="py-3.5 px-3 text-left uppercase">POURCENTAGE &amp; CLASSEMENT SCOLAIRE RDC</td>
-                          <td colSpan={2} className="py-3.5 px-1 font-mono tracking-wide text-yellow-300 text-sm">
+                        <tr className="bg-blue-950 text-white font-black text-center text-xs divide-x divide-slate-600">
+                          <td className="py-3.5 px-3 text-left uppercase text-yellow-405 tracking-wider">POURCENTAGE &amp; CLASSEMENT SCOLAIRE RDC</td>
+                          <td colSpan={2} className="py-3.5 px-1 font-mono tracking-wide text-yellow-300 text-lg bg-blue-900/45">
                             {metrics.percentage}%
                           </td>
-                          <td colSpan={3} className="py-3.5 px-1 font-sans text-[11px] font-bold">
+                          <td colSpan={3} className="py-3.5 px-1 font-sans text-[12px] font-extrabold uppercase">
                             🏆 CLASSEMENT: {metrics.rankText}
                           </td>
-                          <td colSpan={3} className="py-3.5 px-1 font-mono uppercase text-yellow-400 font-extrabold text-[10.5px]">
+                          <td colSpan={3} className="py-3.5 px-1 font-mono uppercase text-yellow-300 font-black text-[11px] bg-emerald-950/20">
                             {metrics.percentage >= 50.0 ? '✅ ADMISSIBLE: PASSGE EN CLASSE SUPÉRIEURE' : '❌ REFUSÉ: DOUBLE DE CLASSE'}
                           </td>
                         </tr>
@@ -1874,7 +1883,7 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
                 </div>
 
                 {/* Signatures block */}
-                <div className="pt-4 grid grid-cols-1 md:grid-cols-3 gap-6 text-[10px] border-t-2 border-slate-800 align-top leading-normal relative z-10 bg-white/50 p-3 rounded-xl mt-4">
+                <div className="pt-4 grid grid-cols-1 md:grid-cols-3 gap-6 text-[10px] border-t-2 border-slate-300 align-top leading-normal relative z-10 bg-white/70 p-4 rounded-xl mt-4">
                   <div className="flex gap-2.5 items-start">
                     <div
                       onClick={() => onOpenQRScanner(activeBulletin.id)}
@@ -1913,15 +1922,18 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
                     <div className="h-10 border border-slate-205 border-dashed rounded bg-slate-50/20" />
                   </div>
 
-                  <div className="text-right">
-                    <span className="text-[8px] uppercase tracking-wide text-slate-500 font-mono block font-bold mb-1">Sceau de l’Inspecteur / Préfet</span>
-                    <p className="text-[9.5px] italic text-slate-600 font-serif leading-none mt-2">Visé : Préfet {schoolObj.rectorName.replace('Monsieur le Préfet ', '')}</p>
-                    <div className="h-6 flex items-center justify-end font-semibold text-[11px] tracking-tight text-blue-800 italic pr-2 mt-2">
-                       Agréé EPST
+                  <div className="text-right flex flex-col items-end justify-start">
+                    <div>
+                      <span className="text-[8px] uppercase tracking-wide text-slate-500 font-mono block font-bold mb-1">Sceau de l’Inspecteur / Préfet</span>
+                      <p className="text-[9.5px] italic text-slate-650 font-serif leading-none mt-2">Visé : Préfet {schoolObj.rectorName.replace('Monsieur le Préfet ', '')}</p>
+                      <div className="font-black text-[10px] tracking-tight text-blue-800 italic pr-2 mt-1">
+                         Agréé EPST RDC
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
+            </div>
 
               {/* Sharing & Control Toolbar */}
               <div className="flex flex-col xl:flex-row xl:items-center justify-between p-4 border-t bg-slate-50 gap-4 shrink-0 rounded-b-2xl">

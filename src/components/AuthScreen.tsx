@@ -101,9 +101,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
       if (next >= 10) {
         setShowCentralPortal(true);
         setAuthMode('SUPER_ADMIN');
-        setAdminEmail('birekeidea@gmail.com');
-        setAdminPassword('b012000b');
-        setDatabaseSecretInput('012000');
+        setAdminEmail('');
+        setAdminPassword('');
+        setDatabaseSecretInput('');
         return 0; // Reset consecutive clicks
       }
       return next;
@@ -210,7 +210,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
       role: 'Préfet des études',
       schoolId: newSchoolObj.id,
       email: newSchoolRectorEmail,
-      matricule: `PREF-${Math.floor(10000 + Math.random() * 90000)}`
+      matricule: `PREF-${Math.floor(10000 + Math.random() * 90000)}`,
+      password: newSchoolRectorPassword
     });
 
     // Reset fields
@@ -287,7 +288,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
         role: 'Enseignant',
         schoolId: matchedSchool.id,
         email: `${teacherNomComplet.toLowerCase().replace(/\s+/g, '')}@ecole.cd`,
-        matricule: teacherMatriculePersonnel.trim() || 'Nouvelle recrue (Sans matricule d’agent)'
+        matricule: teacherMatriculePersonnel.trim() || 'Nouvelle recrue (Sans matricule d’agent)',
+        password: '012000'
       });
       return;
     }
@@ -483,7 +485,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
               <input
                 type="password"
                 required
-                placeholder="Ex : 012000"
+                placeholder="Saisissez la clé d'accès sécurisée"
                 value={databaseSecretInput}
                 onChange={(e) => setDatabaseSecretInput(e.target.value)}
                 className="w-full text-center text-xl font-mono tracking-widest font-extrabold rounded-xl border border-slate-700 bg-slate-950 py-3 text-red-500 shadow-inner focus:outline-hidden focus:border-[#D32F2F] focus:ring-1 focus:ring-[#D32F2F] placeholder-slate-700"
@@ -698,8 +700,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
           {/* Majestic Ministerial School Education Banner */}
           <div className="mt-4 rounded-2xl overflow-hidden border border-slate-200/80 shadow-3xs aspect-video bg-slate-50 relative group">
             <img 
-              src="/src/assets/images/epst_education_hero_1780509042059.png" 
-              alt="EPST RDC Éducation Scolaire"
+              src="/src/assets/images/sec_school_hero_1780578435655.png" 
+              alt="EPST RDC Éducation et Excellence Académique"
               className="w-full h-full object-cover select-none transition-transform duration-500 group-hover:scale-[1.01]"
               referrerPolicy="no-referrer"
             />
@@ -1203,7 +1205,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
                       id="admin-email"
                       type="email"
                       required
-                      placeholder="Ex : birekeidea@gmail.com"
+                      placeholder="Entrez votre adresse e-mail homologuée"
                       value={adminEmail}
                       onChange={(e) => setAdminEmail(e.target.value)}
                       className="w-full rounded-xl border border-slate-300 py-2.5 px-3.5 text-xs shadow-sm focus:border-sky-500 focus:outline-hidden focus:ring-2 focus:ring-sky-500/20 font-medium text-slate-850"
@@ -1219,7 +1221,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
                       id="admin-pass"
                       type="password"
                       required
-                      placeholder="Ex : b012000b"
+                      placeholder="Mot de passe confidentiel"
                       value={adminPassword}
                       onChange={(e) => setAdminPassword(e.target.value)}
                       className="w-full rounded-xl border border-slate-305 py-2.5 px-3.5 text-xs shadow-sm focus:border-sky-505 focus:outline-hidden focus:ring-2 focus:ring-sky-505/20 font-medium text-slate-850"

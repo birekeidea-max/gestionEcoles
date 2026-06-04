@@ -187,11 +187,13 @@ export const PaymentsPanel: React.FC<PaymentsPanelProps> = ({
       let canvas;
       try {
         canvas = await html2canvas(el, {
-          scale: 2.5, // sharp printout details
+          scale: 3, // very sharp high definition details
           useCORS: true,
           allowTaint: false,
           backgroundColor: '#ffffff',
           logging: false,
+          scrollX: 0,
+          scrollY: 0,
         });
       } finally {
         window.getComputedStyle = originalGetComputedStyle;
@@ -736,7 +738,7 @@ export const PaymentsPanel: React.FC<PaymentsPanelProps> = ({
             )}
 
             {/* Printable official layout */}
-            <div id="school-receipt-printable" className="p-6 bg-amber-50/15 border-2 border-dashed border-amber-200 rounded-xl space-y-4 relative overflow-hidden">
+            <div id="school-receipt-printable" className="p-6 bg-[#fffbeb] border-2 border-dashed border-amber-300 rounded-xl space-y-4 relative overflow-hidden">
               
               {/* Back watermark */}
               <div className="absolute inset-0 opacity-[0.45] flex items-center justify-center pointer-events-none">

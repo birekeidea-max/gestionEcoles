@@ -2,20 +2,129 @@ import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 
 /**
- * Utility to convert OKLCH color strings to RGB
- * html2canvas has trouble rendering modern OKLCH color notations.
+ * Utility to convert OKLCH and OKLAB color strings to RGB/RGBA.
+ * html2canvas/jsPDF has trouble rendering modern OKLCH color notations natively.
  */
 export function convertModernColorsToRgb(colorStr: string): string {
   if (!colorStr) return colorStr;
-  if (colorStr.includes('oklch') || colorStr.includes('oklab')) {
-    // Return standard fallsbacks
-    if (colorStr.includes('0.627 0.265 149') || colorStr.includes('red-600') || colorStr.includes('rose-600')) return 'rgb(220, 38, 38)';
-    if (colorStr.includes('blue-600') || colorStr.includes('sky-500')) return 'rgb(37, 99, 235)';
-    if (colorStr.includes('emerald') || colorStr.includes('green-600')) return 'rgb(5, 150, 105)';
-    if (colorStr.includes('yellow-400')) return 'rgb(250, 204, 21)';
-    return 'rgb(30, 41, 59)'; // slate dark replacement
-  }
-  return colorStr;
+  if (!colorStr.includes('oklch') && !colorStr.includes('oklab')) return colorStr;
+
+  // Let's replace any oklch(...) with standard rgb/rgba
+  const oklchParse = /oklch\s*\(([^)]+)\)/gi;
+  let result = colorStr.replace(oklchParse, (fullMatch, content) => {
+    try {
+      // Normalise content: replace any '/' or ',' with spaces, and collapse double spaces
+      const normalized = content.replace(/[\/,]/g, ' ').replace(/\s+/g, ' ').trim();
+      const parts = normalized.split(' ');
+      if (parts.length < 3) return fullMatch;
+      
+      const [lStr, cStr, hStr, aStr] = parts;
+      
+      let L = lStr.endsWith('%') ? parseFloat(lStr) / 100 : parseFloat(lStr);
+      let C = cStr.endsWith('%') ? parseFloat(cStr) / 100 : parseFloat(cStr);
+      let H = parseFloat(hStr);
+      
+      if (hStr.endsWith('rad')) {
+        H = H * (180 / Math.PI);
+      } else if (hStr.endsWith('turn')) {
+        H = H * 360;
+      } else if (hStr.endsWith('grad')) {
+        H = H * 0.9;
+      }
+      
+      let alpha = 1;
+      if (aStr !== undefined) {
+        alpha = aStr.endsWith('%') ? parseFloat(aStr) / 100 : parseFloat(aStr);
+      }
+      
+      // Mathematical conversion from OKLCH to sRGB
+      const hRad = (H * Math.PI) / 180;
+      const aVal = C * Math.cos(hRad);
+      const bOklch = C * Math.sin(hRad);
+
+      const l_lms = L + 0.3963377774 * aVal + 0.2158037573 * bOklch;
+      const m_lms = L - 0.1055613458 * aVal - 0.0638541728 * bOklch;
+      const s_lms = L - 0.0894841775 * aVal - 1.2914855480 * bOklch;
+
+      const l = Math.pow(Math.max(0, l_lms), 3);
+      const m = Math.pow(Math.max(0, m_lms), 3);
+      const s = Math.pow(Math.max(0, s_lms), 3);
+
+      const r_lin = 4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s;
+      const g_lin = -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s;
+      const b_lin = -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s;
+
+      const reqGamma = (c: number) => {
+        if (c <= 0.0031308) {
+          return 12.92 * c;
+        }
+        return 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
+      };
+
+      let rVal = Math.round(Math.min(1, Math.max(0, reqGamma(r_lin))) * 255);
+      let gVal = Math.round(Math.min(1, Math.max(0, reqGamma(g_lin))) * 255);
+      let bResultVal = Math.round(Math.min(1, Math.max(0, reqGamma(b_lin))) * 255);
+
+      if (aStr !== undefined) {
+        return `rgba(${rVal}, ${gVal}, ${bResultVal}, ${alpha})`;
+      }
+      return `rgb(${rVal}, ${gVal}, ${bResultVal})`;
+    } catch (e) {
+      console.error("Failed to convert OKLCH:", e);
+      return fullMatch;
+    }
+  });
+
+  // Let's do the same for oklab(...)
+  const oklabParse = /oklab\s*\(([^)]+)\)/gi;
+  result = result.replace(oklabParse, (fullMatch, content) => {
+    try {
+      const normalized = content.replace(/[\/,]/g, ' ').replace(/\s+/g, ' ').trim();
+      const parts = normalized.split(' ');
+      if (parts.length < 3) return fullMatch;
+      
+      const [lStr, aStrVal, bStrVal, alphaStr] = parts;
+      
+      let L = lStr.endsWith('%') ? parseFloat(lStr) / 100 : parseFloat(lStr);
+      let aVal = aStrVal.endsWith('%') ? parseFloat(aStrVal) / 100 : parseFloat(aStrVal);
+      let bOklab = bStrVal.endsWith('%') ? parseFloat(bStrVal) / 100 : parseFloat(bStrVal);
+      let alpha = 1;
+      if (alphaStr) {
+        alpha = alphaStr.endsWith('%') ? parseFloat(alphaStr) / 100 : parseFloat(alphaStr);
+      }
+
+      const l_lms = L + 0.3963377774 * aVal + 0.2158037573 * bOklab;
+      const m_lms = L - 0.1055613458 * aVal - 0.0638541728 * bOklab;
+      const s_lms = L - 0.0894841775 * aVal - 1.2914855480 * bOklab;
+
+      const l = Math.pow(Math.max(0, l_lms), 3);
+      const m = Math.pow(Math.max(0, m_lms), 3);
+      const s = Math.pow(Math.max(0, s_lms), 3);
+
+      const r_lin = 4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s;
+      const g_lin = -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s;
+      const b_lin = -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s;
+
+      const reqGamma = (c: number) => {
+        if (c <= 0.0031308) return 12.92 * c;
+        return 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
+      };
+
+      let rVal = Math.round(Math.min(1, Math.max(0, reqGamma(r_lin))) * 255);
+      let gVal = Math.round(Math.min(1, Math.max(0, reqGamma(g_lin))) * 255);
+      let bResultVal = Math.round(Math.min(1, Math.max(0, reqGamma(b_lin))) * 255);
+
+      if (alphaStr !== undefined) {
+        return `rgba(${rVal}, ${gVal}, ${bResultVal}, ${alpha})`;
+      }
+      return `rgb(${rVal}, ${gVal}, ${bResultVal})`;
+    } catch (e) {
+      console.error("Failed to convert OKLAB:", e);
+      return fullMatch;
+    }
+  });
+
+  return result;
 }
 
 /**
@@ -71,11 +180,13 @@ export async function downloadElementAsPDF(
     let canvas;
     try {
       canvas = await html2canvas(element, {
-        scale: 2, // Retain high density
+        scale: 3, // Retain very high density for ultra sharp details
         useCORS: true,
         allowTaint: false,
         backgroundColor: '#ffffff',
         logging: false,
+        scrollX: 0,
+        scrollY: 0,
       });
     } finally {
       window.getComputedStyle = originalGetComputedStyle;
