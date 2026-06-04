@@ -24,7 +24,8 @@ import {
   TrendingUp,
   Award,
   BookOpenCheck,
-  Handshake
+  Handshake,
+  Search
 } from 'lucide-react';
 
 export default function App() {
@@ -211,6 +212,11 @@ export default function App() {
   // Antitheft / verification scan state triggers
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [scanCode, setScanCode] = useState('');
+
+  // States for supervisor central base view
+  const [supervisorsTab, setSupervisorsTab] = useState<'SCHOOLS' | 'USERS'>('SCHOOLS');
+  const [supervisorSchoolSearch, setSupervisorSchoolSearch] = useState('');
+  const [supervisorUserSearch, setSupervisorUserSearch] = useState('');
 
   // Sync to localstorage
   useEffect(() => {
@@ -586,54 +592,198 @@ export default function App() {
                       </div>
                     )}
 
-                    {/* Schools database for supervisors */}
-                    <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden text-left">
-                      <div className="bg-indigo-950 px-6 py-5 text-white flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                        <div>
-                          <h3 className="text-sm font-black uppercase tracking-wider flex items-center gap-2 font-sans text-white">
-                            <span>🏫</span> Répertoire d'Audit Homologué des Établissements Secondaires RDC
-                          </h3>
-                          <p className="text-[11px] text-sky-200/90 font-medium">
-                            Données d’identification certifiées par le Secrétariat Général Éducation de la République Démocratique du Congo. L’accès aux caisses scolaires et l’encodage de bulletins est réservé aux directeurs/comptables d’écoles respectifs.
-                          </p>
+                    {/* Tabs navigation for Supervisors */}
+                    <div className="flex border-b border-slate-200 gap-1.5 pt-1">
+                      <button
+                        onClick={() => setSupervisorsTab('SCHOOLS')}
+                        className={`py-3 px-5 text-xs font-black uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
+                          supervisorsTab === 'SCHOOLS'
+                            ? 'border-blue-600 text-blue-700 font-extrabold'
+                            : 'border-transparent text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        🏫 Répertoire des Écoles ({schools.length})
+                      </button>
+                      <button
+                        onClick={() => setSupervisorsTab('USERS')}
+                        className={`py-3 px-5 text-xs font-black uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
+                          supervisorsTab === 'USERS'
+                            ? 'border-blue-600 text-blue-700 font-extrabold'
+                            : 'border-transparent text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        👥 Base Centrale des Utilisateurs ({allUsers.length})
+                      </button>
+                    </div>
+
+                    {supervisorsTab === 'SCHOOLS' ? (
+                      /* Schools database for supervisors */
+                      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden text-left space-y-4 p-6">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200/60 shadow-3xs">
+                          <div className="space-y-1">
+                            <h3 className="text-xs font-black uppercase tracking-wider flex items-center gap-2 text-indigo-950 font-sans">
+                              <span>🏫</span> Répertoire d'Audit des Établissements Secondaires RDC
+                            </h3>
+                            <p className="text-[10.5px] text-slate-500 font-medium">
+                              Données d’identification certifiées par le Secrétariat Général Éducation de la République Démocratique du Congo.
+                            </p>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 bg-white rounded-xl px-3 py-1.5 border border-slate-200 w-full sm:max-w-md shrink-0">
+                            <Search className="w-4 h-4 text-slate-400 shrink-0" />
+                            <input
+                              type="text"
+                              placeholder="Rechercher par nom de l'école ou matricule code..."
+                              value={supervisorSchoolSearch}
+                              onChange={(e) => setSupervisorSchoolSearch(e.target.value)}
+                              className="bg-transparent border-0 text-xs text-slate-700 placeholder-slate-400 focus:outline-hidden focus:ring-0 w-full font-medium"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="overflow-x-auto border border-slate-100 rounded-2xl">
+                          <table className="w-full text-left text-xs border-collapse">
+                            <thead>
+                              <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-extrabold uppercase text-[9px] tracking-wider select-none">
+                                <th className="py-3.5 px-6">Nom de l'Établissement</th>
+                                <th className="py-3.5 px-6">Province &amp; Localisation</th>
+                                <th className="py-3.5 px-6 text-center font-sans">Code National Unique</th>
+                                <th className="py-3.5 px-6 font-sans">Préfet Directeur</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 font-medium font-sans">
+                              {schools
+                                .filter(s => 
+                                  s.name.toLowerCase().includes(supervisorSchoolSearch.toLowerCase()) || 
+                                  s.nationalCode.toLowerCase().includes(supervisorSchoolSearch.toLowerCase())
+                                )
+                                .map((sch) => (
+                                  <tr key={sch.id} className="hover:bg-slate-50/55 transition-colors">
+                                    <td className="py-4 px-6">
+                                      <div className="font-extrabold text-slate-800 text-xs">{sch.name}</div>
+                                      <div className="text-[10px] text-slate-400 font-sans mt-0.5">Enveloppe scolaire active</div>
+                                    </td>
+                                    <td className="py-4 px-6 text-slate-600 text-[11px]">
+                                      <div className="font-semibold">{sch.province}</div>
+                                      <div className="text-[10px] text-slate-400">{sch.commune}, {sch.city}</div>
+                                    </td>
+                                    <td className="py-4 px-6 text-center font-mono text-[11px] font-black text-indigo-950">
+                                      <span className="bg-slate-100 border border-slate-200 px-2.5 py-0.5 rounded font-bold">
+                                        {sch.nationalCode}
+                                      </span>
+                                    </td>
+                                    <td className="py-4 px-6 text-slate-700 text-xs">
+                                      <span className="font-bold">{sch.rectorName}</span>
+                                    </td>
+                                  </tr>
+                                ))}
+                              {schools.filter(s => 
+                                s.name.toLowerCase().includes(supervisorSchoolSearch.toLowerCase()) || 
+                                s.nationalCode.toLowerCase().includes(supervisorSchoolSearch.toLowerCase())
+                              ).length === 0 && (
+                                <tr>
+                                  <td colSpan={4} className="py-8 text-center text-slate-400 font-medium font-sans">
+                                    Aucune école ne correspond à la recherche "{supervisorSchoolSearch}".
+                                  </td>
+                                </tr>
+                              )}
+                            </tbody>
+                          </table>
                         </div>
                       </div>
+                    ) : (
+                      /* Central database of users list for supervisors */
+                      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden text-left space-y-4 p-6">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200/60 shadow-3xs">
+                          <div className="space-y-1">
+                            <h3 className="text-xs font-black uppercase tracking-wider flex items-center gap-2 text-indigo-950 font-sans">
+                              <span>👥</span> Répertoire National des Utilisateurs &amp; Agents Enregistrés ({allUsers.length} Utilisateurs)
+                            </h3>
+                            <p className="text-[10.5px] text-slate-500 font-medium">
+                              Consultez en temps réel les identités d'habilitation, catégories administratives et matricules officiels.
+                            </p>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 bg-white rounded-xl px-3 py-1.5 border border-slate-200 w-full sm:max-w-md shrink-0">
+                            <Search className="w-4 h-4 text-slate-400 shrink-0" />
+                            <input
+                              type="text"
+                              placeholder="Chercher par nom, matricule ou adresse e-mail..."
+                              value={supervisorUserSearch}
+                              onChange={(e) => setSupervisorUserSearch(e.target.value)}
+                              className="bg-transparent border-0 text-xs text-slate-700 placeholder-slate-400 focus:outline-hidden focus:ring-0 w-full font-medium"
+                            />
+                          </div>
+                        </div>
 
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left text-xs border-collapse">
-                          <thead>
-                            <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-extrabold uppercase text-[9px] tracking-wider select-none">
-                              <th className="py-3.5 px-6">Nom de l'Établissement</th>
-                              <th className="py-3.5 px-6">Province &amp; Localisation</th>
-                              <th className="py-3.5 px-6 text-center font-sans">Code National Unique</th>
-                              <th className="py-3.5 px-6 font-sans">Préfet Directeur</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100 font-medium font-sans">
-                            {schools.map((sch) => (
-                              <tr key={sch.id} className="hover:bg-slate-50/55 transition-colors">
-                                <td className="py-4 px-6">
-                                  <div className="font-extrabold text-slate-800 text-xs">{sch.name}</div>
-                                  <div className="text-[10px] text-slate-400 font-sans mt-0.5">Enveloppe scolaire active</div>
-                                </td>
-                                <td className="py-4 px-6 text-slate-600 text-[11px]">
-                                  <div className="font-semibold">{sch.province}</div>
-                                  <div className="text-[10px] text-slate-400">{sch.commune}, {sch.city}</div>
-                                </td>
-                                <td className="py-4 px-6 text-center font-mono text-[11px] font-black text-indigo-950">
-                                  <span className="bg-slate-100 border border-slate-200 px-2.5 py-0.5 rounded font-bold">
-                                    {sch.nationalCode}
-                                  </span>
-                                </td>
-                                <td className="py-4 px-6 text-slate-700 text-xs">
-                                  <span className="font-bold">{sch.rectorName}</span>
-                                </td>
+                        <div className="overflow-x-auto border border-slate-100 rounded-2xl">
+                          <table className="w-full text-left text-xs border-collapse">
+                            <thead>
+                              <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-extrabold uppercase text-[9px] tracking-wider select-none">
+                                <th className="py-3 px-4">Identité de l'Agent d'État</th>
+                                <th className="py-3 px-4">Numéro Matricule</th>
+                                <th className="py-3 px-4">Qualité / Catégorie d'accès</th>
+                                <th className="py-3 px-4">Établissement rattaché</th>
+                                <th className="py-3 px-4">E-mail de contact</th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 font-medium font-sans text-xs">
+                              {allUsers
+                                .filter(u => 
+                                  u.fullName.toLowerCase().includes(supervisorUserSearch.toLowerCase()) || 
+                                  (u.email && u.email.toLowerCase().includes(supervisorUserSearch.toLowerCase())) ||
+                                  (u.matricule && u.matricule.toLowerCase().includes(supervisorUserSearch.toLowerCase()))
+                                )
+                                .map((usr, index) => {
+                                  const associatedSch = schools.find(s => s.id === usr.schoolId);
+                                  const fallbackMatricule = usr.matricule || `${7100000 + index}-${usr.role[0] || 'X'}`;
+                                  return (
+                                    <tr key={index} className="hover:bg-slate-50/55 transition-colors">
+                                      <td className="py-3.5 px-4 font-sans">
+                                        <span className="font-extrabold text-slate-800 block">{usr.fullName}</span>
+                                        {usr.phone && <span className="text-[10px] text-slate-400 font-mono block mt-0.5">{usr.phone}</span>}
+                                      </td>
+                                      <td className="py-3.5 px-4 font-mono font-bold text-slate-700">
+                                        <span className="bg-blue-50 border border-blue-200 text-blue-700 text-[10.5px] px-2 py-0.5 rounded font-black">
+                                          {fallbackMatricule}
+                                        </span>
+                                      </td>
+                                      <td className="py-3.5 px-4">
+                                        <span className={`inline-block px-2.5 py-0.5 rounded text-[9.5px] font-black uppercase tracking-wider ${
+                                          usr.role === 'Administrateur' ? 'bg-red-50 text-[#D32F2F] border border-red-100' :
+                                          usr.role === 'Inspecteur' ? 'bg-amber-50 text-amber-800 border border-amber-100' :
+                                          usr.role === 'Préfet des études' ? 'bg-blue-50 text-blue-800 border border-blue-100' :
+                                          'bg-slate-100 text-slate-650 border border-slate-200'
+                                        }`}>
+                                          {usr.role}
+                                        </span>
+                                      </td>
+                                      <td className="py-3.5 px-4 text-slate-600 text-xs">
+                                        <span className="font-bold block">{associatedSch ? associatedSch.name : 'Régie Centrale / Inspection'}</span>
+                                        <span className="text-[9px] text-slate-400 block mt-0.5">{associatedSch ? `${associatedSch.province} • Code: ${associatedSch.nationalCode}` : 'Niveau National'}</span>
+                                      </td>
+                                      <td className="py-3.5 px-4 font-mono text-slate-500">
+                                        {usr.email || 'Non spécifié'}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              {allUsers.filter(u => 
+                                u.fullName.toLowerCase().includes(supervisorUserSearch.toLowerCase()) || 
+                                (u.email && u.email.toLowerCase().includes(supervisorUserSearch.toLowerCase())) ||
+                                (u.matricule && u.matricule.toLowerCase().includes(supervisorUserSearch.toLowerCase()))
+                              ).length === 0 && (
+                                <tr>
+                                  <td colSpan={5} className="py-8 text-center text-slate-400 font-medium font-sans">
+                                    Aucun agent ne correspond à l'argument "{supervisorUserSearch}".
+                                  </td>
+                                </tr>
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 ) : (
                   /* 🏫 SCHOOL ADMINISTRATIVE DASHBOARD (Default view) */
@@ -965,6 +1115,7 @@ export default function App() {
                 students={students}
                 currentSchool={currentSchool}
                 teacherName={currentUser.fullName}
+                allUsers={allUsers}
               />
             )}
 

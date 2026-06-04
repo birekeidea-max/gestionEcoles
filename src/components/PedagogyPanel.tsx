@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Student, School, SchoolClassLevel, SchoolOption, LessonPreparation, ClassJournalEntry } from '../types';
+import { User, Student, School, SchoolClassLevel, SchoolOption, LessonPreparation, ClassJournalEntry } from '../types';
 import { SCHOOL_OPTIONS, CLASS_LEVELS, COURSES_BY_OPTION, INITIAL_LESSONS, INITIAL_JOURNAL } from '../constants';
 import { CongoFlagIcon, CongoCoatOfArms } from './CongoTheme';
 import { 
@@ -18,21 +18,26 @@ import {
   ShieldAlert,
   Award,
   Save,
-  Trash2
+  Trash2,
+  Users,
+  Search
 } from 'lucide-react';
 
 interface PedagogyPanelProps {
   students: Student[];
   currentSchool: School;
   teacherName: string;
+  allUsers: User[];
 }
 
 export const PedagogyPanel: React.FC<PedagogyPanelProps> = ({
   students,
   currentSchool,
-  teacherName
+  teacherName,
+  allUsers
 }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'COTATION' | 'PREPARATION' | 'JOURNAL'>('COTATION');
+  const [activeSubTab, setActiveSubTab] = useState<'COTATION' | 'PREPARATION' | 'JOURNAL' | 'TEACHERS'>('COTATION');
+  const [teacherSearchQuery, setTeacherSearchQuery] = useState('');
 
   // Filter school-specific students
   const schoolStudents = students.filter(s => s.schoolId === currentSchool.id);
@@ -326,7 +331,7 @@ export const PedagogyPanel: React.FC<PedagogyPanelProps> = ({
         </div>
 
         {/* Sub-Tabs selector */}
-        <div className="flex rounded-xl bg-slate-100 p-1 border border-slate-205 shrink-0 self-start md:self-center">
+        <div className="flex rounded-xl bg-slate-100 p-1 border border-slate-205 shrink-0 self-start md:self-center flex-wrap gap-1 md:gap-0">
           <button
             onClick={() => setActiveSubTab('COTATION')}
             className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
@@ -353,6 +358,15 @@ export const PedagogyPanel: React.FC<PedagogyPanelProps> = ({
           >
             <CalendarRange className="w-3.5 h-3.5" />
             Journal de Classe
+          </button>
+          <button
+            onClick={() => setActiveSubTab('TEACHERS')}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeSubTab === 'TEACHERS' ? 'bg-white text-blue-700 shadow-xs' : 'text-slate-550 hover:bg-white/50'
+            }`}
+          >
+            <Users className="w-3.5 h-3.5" />
+            Corps Enseignant
           </button>
         </div>
       </div>
@@ -1080,6 +1094,102 @@ export const PedagogyPanel: React.FC<PedagogyPanelProps> = ({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* --- RENDER 4: LISTE DES ENSEIGNANTS DE L'ÉCOLE --- */}
+      {activeSubTab === 'TEACHERS' && (
+        <div className="space-y-4 text-left">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden p-6 space-y-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200/60 shadow-3xs">
+              <div className="space-y-1">
+                <h3 className="text-sm font-black uppercase tracking-wider flex items-center gap-2 text-indigo-950 font-sans">
+                  <span>👥</span> Annuaire du Corps Enseignant &amp; Personnel de l’Établissement
+                </h3>
+                <p className="text-[10.5px] text-slate-500 font-medium">
+                  Liste exclusive et certifiée des agents, professeurs et comptables rattachés à <span className="font-extrabold text-blue-600">{currentSchool.name}</span>.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 bg-white rounded-xl px-3 py-1.5 border border-slate-200 w-full sm:max-w-md shrink-0">
+                <Search className="w-4 h-4 text-slate-400 shrink-0" />
+                <input
+                  type="text"
+                  placeholder="Rechercher par nom, e-mail ou matricule..."
+                  value={teacherSearchQuery}
+                  onChange={(e) => setTeacherSearchQuery(e.target.value)}
+                  className="bg-transparent border-0 text-xs text-slate-700 placeholder-slate-400 focus:outline-hidden focus:ring-0 w-full font-medium"
+                />
+              </div>
+            </div>
+
+            <div className="overflow-x-auto border border-slate-100 rounded-2xl">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-extrabold uppercase text-[9px] tracking-wider select-none">
+                    <th className="py-3 px-4">Identité de l'Enseignant / Agent</th>
+                    <th className="py-3 px-4">Matricule National</th>
+                    <th className="py-3 px-4">Catégorie / Fonction</th>
+                    <th className="py-3 px-4">Numéro de Téléphone</th>
+                    <th className="py-3 px-4">Contact Courriel</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-medium font-sans text-xs">
+                  {allUsers
+                    .filter(u => u.schoolId === currentSchool.id)
+                    .filter(usr => 
+                      usr.fullName.toLowerCase().includes(teacherSearchQuery.toLowerCase()) || 
+                      (usr.email && usr.email.toLowerCase().includes(teacherSearchQuery.toLowerCase())) ||
+                      (usr.matricule && usr.matricule.toLowerCase().includes(teacherSearchQuery.toLowerCase()))
+                    )
+                    .map((usr, index) => {
+                      const fallbackMatricule = usr.matricule || `${7100000 + index}-${usr.role[0] || 'T'}`;
+                      return (
+                        <tr key={index} className="hover:bg-slate-50/55 transition-colors bg-white">
+                          <td className="py-3.5 px-4 font-sans">
+                            <span className="font-extrabold text-slate-800 block">{usr.fullName}</span>
+                            <span className="text-[9.5px] text-slate-450 block mt-0.5">Enveloppe budgétaire active</span>
+                          </td>
+                          <td className="py-3.5 px-4 font-mono font-bold text-slate-700">
+                            <span className="bg-slate-100 border border-slate-200 text-blue-700 text-[10.5px] px-2 py-0.5 rounded font-black">
+                              {fallbackMatricule}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span className={`inline-block px-2.5 py-0.5 rounded text-[9.5px] font-black uppercase tracking-wider ${
+                              usr.role === 'Préfet des études' ? 'bg-blue-50 text-blue-800 border border-blue-100' :
+                              usr.role === 'Comptable' ? 'bg-amber-50 text-amber-805 border border-amber-100' :
+                              'bg-indigo-50 text-indigo-700 border border-indigo-100'
+                            }`}>
+                              {usr.role}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-slate-650 font-mono">
+                            {usr.phone || 'Non spécifié'}
+                          </td>
+                          <td className="py-3.5 px-4 font-mono text-slate-550">
+                            {usr.email || 'Non spécifié'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  {allUsers
+                    .filter(u => u.schoolId === currentSchool.id)
+                    .filter(usr => 
+                      usr.fullName.toLowerCase().includes(teacherSearchQuery.toLowerCase()) || 
+                      (usr.email && usr.email.toLowerCase().includes(teacherSearchQuery.toLowerCase())) ||
+                      (usr.matricule && usr.matricule.toLowerCase().includes(teacherSearchQuery.toLowerCase()))
+                    ).length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-slate-400 font-medium font-sans">
+                        Aucun agent de l'établissement ne correspond à la recherche "{teacherSearchQuery}".
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
