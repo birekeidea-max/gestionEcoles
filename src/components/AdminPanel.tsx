@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { User, School, Student, Payment, Bulletin, UserRole, UserActivity } from '../types';
+import { PROVINCES_26 } from '../constants';
 import { 
   ShieldCheck, 
   Users, 
@@ -779,15 +780,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     onChange={(e) => setSProvince(e.target.value)}
                     className="w-full rounded-xl border border-slate-300 py-2 px-3 text-xs focus:ring-1 focus:ring-sky-500 font-bold bg-white text-slate-700"
                   >
-                    <option value="Kinshasa">Kinshasa</option>
-                    <option value="Haut-Katanga">Haut-Katanga</option>
-                    <option value="Nord-Kivu">Nord-Kivu</option>
-                    <option value="Sud-Kivu">Sud-Kivu</option>
-                    <option value="Kongo-Central">Kongo-Central</option>
-                    <option value="Lualaba">Lualaba</option>
-                    <option value="Tshopo">Tshopo</option>
-                    <option value="Kasaï-Central">Kasaï-Central</option>
-                    <option value="Kasaï-Oriental">Kasaï-Oriental</option>
+                    {PROVINCES_26.map(prov => (
+                      <option key={prov} value={prov}>{prov}</option>
+                    ))}
                   </select>
                 </div>
 
@@ -1660,23 +1655,28 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             
             {/* Left Block: Provinces distributions */}
             <div className="space-y-4">
-              <h5 className="font-bold text-xs text-slate-700 uppercase tracking-wider font-mono">Démographie des Élèves par Province</h5>
-              <div className="space-y-3">
-                {['Kinshasa', 'Haut-Katanga', 'Nord-Kivu', 'Sud-Kivu', 'Kasaï-Central'].map((prov) => {
+              <h5 className="font-bold text-xs text-slate-700 uppercase tracking-wider font-mono">Démographie des Élèves sur les 26 Provinces</h5>
+              <div className="space-y-3 max-h-64 overflow-y-auto pr-2 scrollbar-thin">
+                {PROVINCES_26.map((prov) => {
                   const sCount = students.filter(s => {
                     const sch = schools.find(sc => sc.id === s.schoolId);
                     return sch?.province === prov;
                   }).length;
                   const ratio = students.length > 0 ? (sCount / students.length) * 100 : 0;
+                  const hasSchool = schools.some(sc => sc.province === prov);
                   
                   return (
-                    <div key={prov} className="space-y-1">
+                    <div key={prov} className="space-y-1 py-1 border-b border-slate-50 last:border-0">
                       <div className="flex justify-between text-xs font-semibold">
-                        <span className="text-slate-700">{prov}</span>
-                        <span className="text-slate-500">{sCount} Élèves ({ratio.toFixed(0)}%)</span>
+                        <span className="text-slate-700 flex items-center gap-1.5">
+                          <span>📍</span> {prov} 
+                          {!hasSchool && <span className="text-[9px] bg-slate-100 text-slate-400 font-mono px-1 py-0.2 rounded">Inactif</span>}
+                          {hasSchool && <span className="text-[9px] bg-emerald-50 text-emerald-650 font-black font-mono px-1 py-0.2 rounded">Actif</span>}
+                        </span>
+                        <span className="text-slate-500 font-mono">{sCount} Élève{sCount > 1 ? 's' : ''} ({ratio.toFixed(0)}%)</span>
                       </div>
-                      <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200">
-                        <div className="bg-sky-600 h-2 rounded-full" style={{ width: `${ratio}%` }} />
+                      <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden border border-slate-200">
+                        <div className={`h-1.5 rounded-full ${hasSchool ? 'bg-sky-500' : 'bg-slate-350'}`} style={{ width: `${ratio || (hasSchool ? 5 : 0)}%` }} />
                       </div>
                     </div>
                   );

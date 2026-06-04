@@ -24,6 +24,35 @@ export const CLASS_LEVELS: SchoolClassLevel[] = [
   '4ème Des humanités'
 ];
 
+export const PROVINCES_26 = [
+  'Kinshasa',
+  'Kongo-Central',
+  'Kwango',
+  'Kwilu',
+  'Mai-Ndombe',
+  'Équateur',
+  'Mongala',
+  'Nord-Ubangi',
+  'Sud-Ubangi',
+  'Tshuapa',
+  'Bas-Uélé',
+  'Haut-Uélé',
+  'Ituri',
+  'Tshopo',
+  'Nord-Kivu',
+  'Sud-Kivu',
+  'Maniema',
+  'Haut-Katanga',
+  'Haut-Lomami',
+  'Lualaba',
+  'Tanganyika',
+  'Lomami',
+  'Sankuru',
+  'Kasaï',
+  'Kasaï-Central',
+  'Kasaï-Oriental'
+];
+
 export const MONTHS = [
   'Septembre',
   'Octobre',

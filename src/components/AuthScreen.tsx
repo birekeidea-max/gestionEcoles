@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { UserRole } from '../types';
-import { SCHOOL_OPTIONS, INITIAL_SCHOOLS } from '../constants';
+import { SCHOOL_OPTIONS, INITIAL_SCHOOLS, PROVINCES_26 } from '../constants';
 import { CongoCoatOfArms, CongoFlagIcon } from './CongoTheme';
 import { 
   ShieldCheck, 
@@ -675,7 +675,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
             Système de Gestion des Écoles Secondaires
           </p>
           <p className="text-[10px] text-slate-400 font-mono mt-0.5">
-            République Démocratique du Congo &bull; Plateforme Nationale Unifiée
+            République Démocratique du Congo &bull; Plateforme Nationale Unifiée (26 Provinces)
           </p>
 
           {/* Majestic Ministerial School Education Banner */}
@@ -1042,15 +1042,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
                                   onChange={(e) => setCustomSchoolProvince(e.target.value)}
                                   className="w-full rounded-lg border border-slate-300 py-1 px-1.5 text-[10px] bg-white text-slate-800 font-semibold"
                                 >
-                                  <option value="Kinshasa">Kinshasa</option>
-                                  <option value="Nord-Kivu">Nord-Kivu</option>
-                                  <option value="Sud-Kivu font-semibold">Sud-Kivu</option>
-                                  <option value="Haut-Katanga">Haut-Katanga</option>
-                                  <option value="Lualaba">Lualaba</option>
-                                  <option value="Kongo-Central">Kongo-Central</option>
-                                  <option value="Tshopo">Tshopo</option>
-                                  <option value="Kasaï-Oriental">Kasaï-Oriental</option>
-                                  <option value="Kasaï-Occidental">Kasaï-Occidental</option>
+                                  {PROVINCES_26.map(prov => (
+                                    <option key={prov} value={prov}>{prov}</option>
+                                  ))}
                                 </select>
                               </div>
                               <div>
@@ -1258,15 +1252,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
                     }}
                     className="w-full rounded-lg border border-slate-300 py-2 px-2 text-xs"
                   >
-                    <option value="Kinshasa">Kinshasa</option>
-                    <option value="Nord-Kivu">Nord-Kivu</option>
-                    <option value="Sud-Kivu">Sud-Kivu</option>
-                    <option value="Haut-Katanga">Haut-Katanga</option>
-                    <option value="Lualaba">Lualaba</option>
-                    <option value="Kongo-Central">Kongo-Central</option>
-                    <option value="Tshopo font-semibold">Tshopo</option>
-                    <option value="Kasaï-Oriental">Kasaï-Oriental</option>
-                    <option value="Kasaï-Occidental">Kasaï-Occidental</option>
+                    {PROVINCES_26.map(prov => (
+                      <option key={prov} value={prov}>{prov}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
