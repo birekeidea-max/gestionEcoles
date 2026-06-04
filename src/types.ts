@@ -21,6 +21,7 @@ export interface User {
   timestamp?: string;
   matricule?: string;
   isOnline?: boolean;
+  axe?: string;
 }
 
 export type SchoolOption =

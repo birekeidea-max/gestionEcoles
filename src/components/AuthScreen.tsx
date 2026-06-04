@@ -67,6 +67,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [matricule, setMatricule] = useState('');
+  const [axe, setAxe] = useState('Kinshasa-Est');
   const [role, setRole] = useState<UserRole>('Préfet des études');
   const approvedSchools = schools.filter(s => s.isApproved !== false);
   const [selectedSchoolId, setSelectedSchoolId] = useState(approvedSchools[0]?.id || schools[0]?.id || 'sc-1');
@@ -145,6 +146,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
         if (parsed.phone) setPhone(parsed.phone);
         if (parsed.email) setEmail(parsed.email);
         if (parsed.matricule) setMatricule(parsed.matricule);
+        if (parsed.axe) setAxe(parsed.axe);
         if (parsed.role) setRole(parsed.role);
         if (parsed.schoolInputMode) setSchoolInputMode(parsed.schoolInputMode);
         if (parsed.customSchoolName) setCustomSchoolName(parsed.customSchoolName);
@@ -281,6 +283,53 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
         schoolId: matchedSchool.id,
         email: `${teacherNomComplet.toLowerCase().replace(/\s+/g, '')}@ecole.cd`,
         matricule: teacherMatriculePersonnel.trim() || 'Nouvelle recrue (Sans matricule d’agent)'
+      });
+      return;
+    }
+
+    if (role === 'Inspecteur' || role === 'Coordinateur' || role === 'Directeur') {
+      if (!fullName.trim()) {
+        setFormError('Veuillez indiquer votre nom complet d’autorité administrative.');
+        return;
+      }
+      if (!phone.trim()) {
+        setFormError('Un numéro de téléphone congolais valide est requis.');
+        return;
+      }
+      if (!email.trim() || !email.includes('@')) {
+        setFormError('Une adresse email professionnelle est requise.');
+        return;
+      }
+      if (!matricule.trim()) {
+        setFormError('Le Numéro Matricule national d’autorité étatique est obligatoire.');
+        return;
+      }
+      if ((role === 'Inspecteur' || role === 'Coordinateur') && !axe.trim()) {
+        setFormError('Veuillez préciser l’Axe Territorial ou Éducatif de contrôle.');
+        return;
+      }
+
+      if (rememberMe) {
+        const credentialsToSave = {
+          fullName,
+          phone,
+          email,
+          matricule,
+          axe,
+          role,
+          selectedSchoolId: 'all'
+        };
+        localStorage.setItem('sgesc_remembered_credentials', JSON.stringify(credentialsToSave));
+      }
+
+      onLogin({
+        fullName,
+        phone,
+        role,
+        schoolId: 'all',
+        email,
+        matricule,
+        axe: (role === 'Inspecteur' || role === 'Coordinateur') ? axe : undefined
       });
       return;
     }
@@ -810,6 +859,98 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
                           />
                         </div>
                       </div>
+                    </div>
+                  ) : (role === 'Inspecteur' || role === 'Coordinateur' || role === 'Directeur') ? (
+                    /* INSPECTORS & COORDINATORS & DIRECTEURS */
+                    <div className="space-y-4 p-4 bg-amber-50/50 border border-amber-200/60 rounded-2xl text-left">
+                      <div className="flex items-center gap-1.5 text-amber-800 font-extrabold text-[12px] uppercase tracking-wide">
+                        <span>🛡️ Espace Autorité d'Inspection de l'EPST</span>
+                      </div>
+
+                      <p className="text-[11px] leading-relaxed text-slate-700 bg-white p-2.5 rounded-xl border border-slate-200 font-medium">
+                        {role === 'Directeur' 
+                          ? "Le programme national de l'école primaire n'étant pas encore actif sur la plateforme, l'accès vous est fourni en mode visiteur simple du réseau."
+                          : "Vous devez renseigner votre matricule et l'axe de supervision de votre juridiction pour pouvoir auditer la plateforme scolaire."
+                        }
+                      </p>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
+                          Nom Complet *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Ex: Paul Kabongo"
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
+                          className="w-full rounded-xl border border-slate-305 py-2.5 px-3.5 text-sm shadow-sm focus:border-sky-505 focus:outline-hidden text-slate-800 font-medium bg-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
+                          Numéro de Téléphone *
+                        </label>
+                        <input
+                          type="tel"
+                          required
+                          placeholder="Ex: +243 812 345 678"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          className="w-full rounded-xl border border-slate-305 py-2.5 px-3.5 text-sm shadow-sm focus:border-sky-505 focus:outline-hidden text-slate-800 font-medium bg-white font-mono"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
+                          Adresse Email Personnel / Pro *
+                        </label>
+                        <input
+                          type="email"
+                          required
+                          placeholder="Ex: paul.kabongo@epst.cd"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="w-full rounded-xl border border-slate-305 py-2.5 px-3.5 text-sm shadow-sm focus:border-sky-505 focus:outline-hidden text-slate-805 font-medium bg-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
+                          Numéro Matricule ou d’Agent de l’État *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Ex: MAT-INSP-2849"
+                          value={matricule}
+                          onChange={(e) => setMatricule(e.target.value)}
+                          className="w-full rounded-xl border border-slate-305 py-2.5 px-3.5 text-sm shadow-sm focus:border-sky-505 focus:outline-hidden text-slate-805 font-bold bg-white font-mono"
+                        />
+                      </div>
+
+                      {(role === 'Inspecteur' || role === 'Coordinateur') && (
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
+                            Axe Territorial de Supervision *
+                          </label>
+                          <select
+                            value={axe}
+                            onChange={(e) => setAxe(e.target.value)}
+                            className="w-full text-slate-800 rounded-xl border border-slate-300 py-2.5 px-3 text-xs bg-white font-bold"
+                          >
+                            <option value="Axe Kinshasa-Est">Axe Kinshasa-Est</option>
+                            <option value="Axe Kinshasa-Ouest">Axe Kinshasa-Ouest</option>
+                            <option value="Axe Goma-Ville &amp; Territoires">Axe Goma-Ville &amp; Territoires</option>
+                            <option value="Axe Lubumbashi-Sud">Axe Lubumbashi-Sud</option>
+                            <option value="Axe Kivu &amp; Maniema">Axe Kivu &amp; Maniema</option>
+                            <option value="Axe Kongo-Central">Axe Kongo-Central</option>
+                            <option value="Axe Kisangani-Province">Axe Kisangani-Province</option>
+                            <option value="Axe Kasaï National">Axe Kasaï National</option>
+                          </select>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     /* RECTORS, DIRECTEURS, ET COMPTABLES FORM FIELDS */

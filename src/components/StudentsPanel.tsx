@@ -23,6 +23,7 @@ interface StudentsPanelProps {
   onUpdateStudent: (student: Student) => void;
   onDeleteStudent: (id: string) => void;
   onOpenQRScanner: (code: string) => void;
+  payments?: any[];
 }
 
 export const StudentsPanel: React.FC<StudentsPanelProps> = ({
@@ -31,11 +32,13 @@ export const StudentsPanel: React.FC<StudentsPanelProps> = ({
   onAddStudent,
   onUpdateStudent,
   onDeleteStudent,
-  onOpenQRScanner
+  onOpenQRScanner,
+  payments = []
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterClass, setFilterClass] = useState<string>('All');
   const [filterOption, setFilterOption] = useState<string>('All');
+  const [selectedVerifyMonth, setSelectedVerifyMonth] = useState<string>('Septembre');
   
   // Modals / Form editing state
   const [isEditing, setIsEditing] = useState(false);
@@ -279,6 +282,26 @@ export const StudentsPanel: React.FC<StudentsPanelProps> = ({
                 {SCHOOL_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             </div>
+
+            <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 rounded-lg px-2.5 py-1">
+              <span className="text-[10px] uppercase font-bold text-emerald-800">Écolage :</span>
+              <select
+                value={selectedVerifyMonth}
+                onChange={(e) => setSelectedVerifyMonth(e.target.value)}
+                className="bg-transparent text-xs font-bold text-emerald-800 focus:outline-hidden"
+              >
+                <option value="Septembre">Septembre</option>
+                <option value="Octobre">Octobre</option>
+                <option value="Novembre">Novembre</option>
+                <option value="Décembre">Décembre</option>
+                <option value="Janvier">Janvier</option>
+                <option value="Février">Février</option>
+                <option value="Mars">Mars</option>
+                <option value="Avril">Avril</option>
+                <option value="Mai">Mai</option>
+                <option value="Juin">Juin</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -316,6 +339,7 @@ export const StudentsPanel: React.FC<StudentsPanelProps> = ({
                   <th className="py-3.5 px-4">Sexe</th>
                   <th className="py-3.5 px-4">Classe &amp; Option</th>
                   <th className="py-3.5 px-2">Responsable</th>
+                  <th className="py-3.5 px-4 text-center">Statut Écolage ({selectedVerifyMonth})</th>
                   <th className="py-3.5 px-4 text-center">Actions Sécurisées</th>
                 </tr>
               </thead>
@@ -354,6 +378,24 @@ export const StudentsPanel: React.FC<StudentsPanelProps> = ({
                     </td>
                     <td className="py-3 px-2 text-slate-500 font-medium">
                       {student.guardianName}
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      {(() => {
+                        const isPaid = payments.some(
+                          (p: any) => p.studentId === student.id && p.month === selectedVerifyMonth
+                        );
+                        return isPaid ? (
+                          <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-250 font-extrabold uppercase text-[9px] px-2.5 py-1 rounded-full cursor-help select-none" title="Versement enregistré et validé par la comptabilité">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            Payé {selectedVerifyMonth.substring(0, 4)}.
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-700 border border-rose-250 font-extrabold uppercase text-[9px] px-2.5 py-1 rounded-full cursor-help select-none" title="Aucun versement enregistré pour ce mois de scolarité">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+                            Impayé
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td className="py-3 px-4 text-center">
                       <div className="flex items-center justify-center gap-2">

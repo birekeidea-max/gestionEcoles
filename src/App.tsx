@@ -464,42 +464,50 @@ export default function App() {
               <Building2 className="w-4 h-4 shrink-0" />
               Tableau de bord
             </button>
-            <button
-              onClick={() => setActiveTab('STUDENTS')}
-              className={`flex-1 sm:flex-none py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center lg:justify-start gap-2.5 whitespace-nowrap cursor-pointer ${
-                activeTab === 'STUDENTS' ? 'bg-[#007FFF] text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              <Users className="w-4 h-4 shrink-0" />
-              Élèves &amp; Inscriptions
-            </button>
-            <button
-              onClick={() => setActiveTab('PAYMENTS')}
-              className={`flex-1 sm:flex-none py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center lg:justify-start gap-2.5 whitespace-nowrap cursor-pointer ${
-                activeTab === 'PAYMENTS' ? 'bg-[#007FFF] text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              <CreditCard className="w-4 h-4 shrink-0" />
-              Écolages &amp; Reçus
-            </button>
-            <button
-              onClick={() => setActiveTab('BULLETINS')}
-              className={`flex-1 sm:flex-none py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center lg:justify-start gap-2.5 whitespace-nowrap cursor-pointer ${
-                activeTab === 'BULLETINS' ? 'bg-[#007FFF] text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              <FileText className="w-4 h-4 shrink-0" />
-              Bulletins Scolaires
-            </button>
-            <button
-              onClick={() => setActiveTab('PEDAGOGY')}
-              className={`flex-1 sm:flex-none py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center lg:justify-start gap-2.5 whitespace-nowrap cursor-pointer ${
-                activeTab === 'PEDAGOGY' ? 'bg-[#007FFF] text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              <NotebookPen className="w-4 h-4 shrink-0" />
-              Pédagogie &amp; Cotation
-            </button>
+            {(currentUser?.role === 'Administrateur' || currentUser?.role === 'Préfet des études' || currentUser?.role === 'Comptable') && (
+              <button
+                onClick={() => setActiveTab('STUDENTS')}
+                className={`flex-1 sm:flex-none py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center lg:justify-start gap-2.5 whitespace-nowrap cursor-pointer ${
+                  activeTab === 'STUDENTS' ? 'bg-[#007FFF] text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                <Users className="w-4 h-4 shrink-0" />
+                Élèves &amp; Inscriptions
+              </button>
+            )}
+            {(currentUser?.role === 'Administrateur' || currentUser?.role === 'Préfet des études' || currentUser?.role === 'Comptable') && (
+              <button
+                onClick={() => setActiveTab('PAYMENTS')}
+                className={`flex-1 sm:flex-none py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center lg:justify-start gap-2.5 whitespace-nowrap cursor-pointer ${
+                  activeTab === 'PAYMENTS' ? 'bg-[#007FFF] text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                <CreditCard className="w-4 h-4 shrink-0" />
+                Écolages &amp; Reçus
+              </button>
+            )}
+            {(currentUser?.role === 'Administrateur' || currentUser?.role === 'Préfet des études' || currentUser?.role === 'Comptable' || currentUser?.role === 'Enseignant') && (
+              <button
+                onClick={() => setActiveTab('BULLETINS')}
+                className={`flex-1 sm:flex-none py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center lg:justify-start gap-2.5 whitespace-nowrap cursor-pointer ${
+                  activeTab === 'BULLETINS' ? 'bg-[#007FFF] text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                <FileText className="w-4 h-4 shrink-0" />
+                Bulletins Scolaires
+              </button>
+            )}
+            {(currentUser?.role === 'Administrateur' || currentUser?.role === 'Préfet des études' || currentUser?.role === 'Comptable' || currentUser?.role === 'Enseignant') && (
+              <button
+                onClick={() => setActiveTab('PEDAGOGY')}
+                className={`flex-1 sm:flex-none py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center lg:justify-start gap-2.5 whitespace-nowrap cursor-pointer ${
+                  activeTab === 'PEDAGOGY' ? 'bg-[#007FFF] text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                <NotebookPen className="w-4 h-4 shrink-0" />
+                Pédagogie &amp; Cotation
+              </button>
+            )}
             {isSuperAdmin && (
               <button
                 onClick={() => setActiveTab('ADMIN')}
@@ -539,8 +547,99 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Primary dynamic statistics of the school */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {(currentUser?.role === 'Inspecteur' || currentUser?.role === 'Coordinateur' || currentUser?.role === 'Directeur') ? (
+                  /* 🛡️ VISITOR / INSPECTOR / COORDINATOR CENTRAL AUDIT VIEW */
+                  <div className="space-y-6">
+                    {/* Supervisor details card */}
+                    <div className="bg-amber-50/75 border border-amber-200 rounded-3xl p-6 shadow-3xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-left animate-in fade-in duration-150">
+                      <div className="space-y-2">
+                        <span className="inline-flex items-center gap-1.5 bg-amber-200 text-amber-950 font-mono font-black text-[9px] px-3 py-1 rounded-full uppercase tracking-widest border border-amber-300">
+                          🛡️ ACCREDITATION ADMINISTRATIVE DE L'EPST
+                        </span>
+                        <h3 className="text-lg font-black text-slate-800 uppercase tracking-tight">
+                          {currentUser.role === 'Inspecteur' ? 'Inspecteur National de l’EPST' : currentUser.role === 'Coordinateur' ? 'Coordinateur National de Zone Scolaire' : 'Directeur Visiteur du Réseau'}
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 text-xs text-slate-600 font-semibold pt-1">
+                          <div>👤 Nom Complet : <span className="font-extrabold text-slate-800">{currentUser.fullName}</span></div>
+                          <div>🆔 Matricule d'Agent d'État : <span className="font-mono font-extrabold text-blue-700">{currentUser.matricule}</span></div>
+                          {currentUser.axe && (
+                            <div className="sm:col-span-2">🌐 Axe de Supervision : <span className="font-extrabold text-[#D32F2F] bg-red-100 border border-red-200/60 px-2.5 py-0.5 rounded">{currentUser.axe}</span></div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="bg-white/90 backdrop-blur-md px-5 py-3.5 rounded-2xl border border-slate-200/80 text-center shrink-0 w-full md:w-auto font-sans">
+                        <span className="text-[9px] uppercase font-mono tracking-wider font-bold text-slate-400 block">Réseau des Écoles</span>
+                        <span className="text-2xl font-black text-indigo-950 block">{schools.length} Écoles</span>
+                        <span className="text-[9.5px] font-black text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded border border-emerald-100 mt-1 inline-block">Serveur National RDC</span>
+                      </div>
+                    </div>
+
+                    {/* Notice if Directeur */}
+                    {currentUser.role === 'Directeur' && (
+                      <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl text-left text-xs text-blue-800 leading-relaxed font-bold flex items-center gap-3">
+                        <span className="text-2xl shrink-0">ℹ️</span>
+                        <div>
+                          <p className="font-extrabold uppercase text-[10px] tracking-wider text-blue-900 mb-0.5">Note de la Direction Générale :</p>
+                          <p className="font-semibold text-[11px] text-slate-650 font-sans">Le programme national de gestion des écoles primaires n'étant pas encore actif sur la plateforme centrale (traitement exclusif du programme secondaire en phase I), vous visitez simplement la plateforme.</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Schools database for supervisors */}
+                    <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden text-left">
+                      <div className="bg-indigo-950 px-6 py-5 text-white flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <div>
+                          <h3 className="text-sm font-black uppercase tracking-wider flex items-center gap-2 font-sans text-white">
+                            <span>🏫</span> Répertoire d'Audit Homologué des Établissements Secondaires RDC
+                          </h3>
+                          <p className="text-[11px] text-sky-200/90 font-medium">
+                            Données d’identification certifiées par le Secrétariat Général Éducation de la République Démocratique du Congo. L’accès aux caisses scolaires et l’encodage de bulletins est réservé aux directeurs/comptables d’écoles respectifs.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs border-collapse">
+                          <thead>
+                            <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-extrabold uppercase text-[9px] tracking-wider select-none">
+                              <th className="py-3.5 px-6">Nom de l'Établissement</th>
+                              <th className="py-3.5 px-6">Province &amp; Localisation</th>
+                              <th className="py-3.5 px-6 text-center font-sans">Code National Unique</th>
+                              <th className="py-3.5 px-6 font-sans">Préfet Directeur</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 font-medium font-sans">
+                            {schools.map((sch) => (
+                              <tr key={sch.id} className="hover:bg-slate-50/55 transition-colors">
+                                <td className="py-4 px-6">
+                                  <div className="font-extrabold text-slate-800 text-xs">{sch.name}</div>
+                                  <div className="text-[10px] text-slate-400 font-sans mt-0.5">Enveloppe scolaire active</div>
+                                </td>
+                                <td className="py-4 px-6 text-slate-600 text-[11px]">
+                                  <div className="font-semibold">{sch.province}</div>
+                                  <div className="text-[10px] text-slate-400">{sch.commune}, {sch.city}</div>
+                                </td>
+                                <td className="py-4 px-6 text-center font-mono text-[11px] font-black text-indigo-950">
+                                  <span className="bg-slate-100 border border-slate-200 px-2.5 py-0.5 rounded font-bold">
+                                    {sch.nationalCode}
+                                  </span>
+                                </td>
+                                <td className="py-4 px-6 text-slate-700 text-xs">
+                                  <span className="font-bold">{sch.rectorName}</span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* 🏫 SCHOOL ADMINISTRATIVE DASHBOARD (Default view) */
+                  <>
+                    {/* Primary dynamic statistics of the school */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="bg-white p-5 rounded-2xl border border-slate-200 flex items-center gap-4 hover:shadow-sm transition-all">
                     <div className="p-3 bg-sky-50 text-[#007FFF] rounded-xl border border-sky-100 shrink-0">
                       <Users className="w-5 h-5" />
@@ -552,16 +651,29 @@ export default function App() {
                     </div>
                   </div>
 
-                  <div className="bg-white p-5 rounded-2xl border border-slate-200 flex items-center gap-4 hover:shadow-sm transition-all">
-                    <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100 shrink-0">
-                      <CreditCard className="w-5 h-5" />
+                  {currentUser?.role === 'Enseignant' ? (
+                    <div className="bg-white p-5 rounded-2xl border border-slate-200 flex items-center gap-4 hover:shadow-sm transition-all duration-150 animate-in fade-in">
+                      <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100 shrink-0">
+                        <NotebookPen className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] uppercase font-mono tracking-wider font-bold text-slate-400 block">Statut Pédagogique</span>
+                        <span className="text-xl font-black text-emerald-700 leading-none">Encodage Actif</span>
+                        <p className="text-[9px] text-emerald-600 font-bold truncate mt-0.5">Saisie des fiches &amp; notes</p>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-[10px] uppercase font-mono tracking-wider font-bold text-slate-400 block">Frais Recouvrés</span>
-                      <span className="text-xl font-black text-emerald-700 leading-none">${totalReceivedUSD.toFixed(0)}</span>
-                      <p className="text-[9px] text-emerald-600 font-bold truncate mt-0.5">Recettes trimestrielles</p>
+                  ) : (
+                    <div className="bg-white p-5 rounded-2xl border border-slate-200 flex items-center gap-4 hover:shadow-sm transition-all">
+                      <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100 shrink-0">
+                        <CreditCard className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] uppercase font-mono tracking-wider font-bold text-slate-400 block">Frais Recouvrés</span>
+                        <span className="text-xl font-black text-emerald-700 leading-none">${totalReceivedUSD.toFixed(0)}</span>
+                        <p className="text-[9px] text-emerald-600 font-bold truncate mt-0.5">Recettes trimestrielles</p>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   <div className="bg-white p-5 rounded-2xl border border-slate-200 flex items-center gap-4 hover:shadow-sm transition-all">
                     <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl border border-indigo-100 shrink-0">
@@ -794,6 +906,8 @@ export default function App() {
                   </div>
 
                 </div>
+                  </>
+                )}
 
               </div>
             )}
@@ -807,6 +921,7 @@ export default function App() {
                 onUpdateStudent={(updatedSt) => setStudents(prev => prev.map(s => s.id === updatedSt.id ? updatedSt : s))}
                 onDeleteStudent={(id) => setStudents(prev => prev.filter(s => s.id !== id))}
                 onOpenQRScanner={handleOpenQRScanner}
+                payments={payments}
               />
             )}
 
