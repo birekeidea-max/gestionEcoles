@@ -5,6 +5,7 @@ import { downloadElementAsPDF, convertModernColorsToRgb } from '../utils/pdfGene
 import { MONTHS, SCHOOL_OPTIONS, CLASS_LEVELS } from '../constants';
 import { CongoFlagIcon, CongoCoatOfArms } from './CongoTheme';
 import { Landmark, Search, PlusCircle, Check, DollarSign, Calendar, Eye, Bookmark, Printer, RefreshCw, X } from 'lucide-react';
+import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 
 interface PaymentsPanelProps {
   payments: Payment[];
@@ -300,6 +301,172 @@ export const PaymentsPanel: React.FC<PaymentsPanelProps> = ({
         </div>
       </div>
 
+      {/* 📊 ANALYSE DE LA CAISSE (PIE CHARTS) */}
+      {(() => {
+        // 1. Aggregation by Month (USD values)
+        const monthlyDataMap: { [key: string]: number } = {};
+        schoolPayments.forEach(p => {
+          const usdVal = p.currency === 'USD' ? p.amount : p.amount / USD_TO_CDF;
+          monthlyDataMap[p.month] = (monthlyDataMap[p.month] || 0) + usdVal;
+        });
+
+        const MONTH_ORDER = [
+          'Septembre', 'Octobre', 'Novembre', 'Décembre', 
+          'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août'
+        ];
+
+        const monthlyChartData = Object.keys(monthlyDataMap)
+          .map(m => ({
+            name: m,
+            value: Math.round(monthlyDataMap[m] * 100) / 100
+          }))
+          .sort((a, b) => MONTH_ORDER.indexOf(a.name) - MONTH_ORDER.indexOf(b.name));
+
+        // 2. Aggregation by Type of Fee / Option
+        const optionDataMap: { [key: string]: number } = {};
+        schoolPayments.forEach(p => {
+          const usdVal = p.currency === 'USD' ? p.amount : p.amount / USD_TO_CDF;
+          optionDataMap[p.option] = (optionDataMap[p.option] || 0) + usdVal;
+        });
+
+        const optionChartData = Object.keys(optionDataMap).map(opt => ({
+          name: opt,
+          value: Math.round(optionDataMap[opt] * 100) / 100
+        }));
+
+        const CHART_COLORS = [
+          '#007FFF', // Congolese sky blue
+          '#10B981', // Emerald green
+          '#F4D03F', // Congolese yellow
+          '#D32F2F', // Congolese red
+          '#6366F1', // Indigo
+          '#EC4899', // Pink
+          '#14B8A6', // Teal
+          '#F97316', // Orange
+          '#06B6D4', // Cyan
+          '#8B5CF6'  // Purple
+        ];
+
+        return (
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-3xs space-y-5">
+            <div className="border-b border-slate-100 pb-3">
+              <h3 className="text-xs font-black uppercase tracking-wider text-indigo-950 flex items-center gap-2">
+                <span>📊</span> Suivi Analytique &bull; Répartition des Recettes
+              </h3>
+              <p className="text-[11px] text-slate-500 font-medium">
+                Visualisation graphique de l'encaissement global par mois d'écolage et par type de frais (par option d'études).
+              </p>
+            </div>
+
+            {schoolPayments.length === 0 ? (
+              <div className="py-8 text-center bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                <span className="text-xl block mb-1">📈</span>
+                <p className="text-xs font-bold text-slate-500">Aucun versement n'a encore été enregistré pour alimenter le graphique.</p>
+                <p className="text-[10px] text-slate-400 mt-0.5">Enregistrez un premier versement pour voir l'analyse graphique s'actualiser.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-2">
+                {/* Chart 1: Month Split */}
+                <div className="space-y-4">
+                  <h4 className="text-[11px] font-extrabold text-slate-700 uppercase tracking-tight flex items-center gap-1.5 border-b border-slate-50 pb-1.5">
+                    <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                    Statut de Recouvrement par Mois
+                  </h4>
+                  <div className="h-44 relative w-full flex items-center justify-center">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={monthlyChartData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={35}
+                          outerRadius={65}
+                          paddingAngle={3}
+                          dataKey="value"
+                        >
+                          {monthlyChartData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          formatter={(value: any) => [`$${value} USD`, 'Recettes']} 
+                          contentStyle={{ background: '#0f172a', borderRadius: '10px', border: 'none', color: '#fff', fontSize: '10px', fontWeight: 'bold' }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  
+                  {/* Detailed Legend List with percentages */}
+                  <div className="grid grid-cols-2 gap-1.5 max-h-32 overflow-y-auto pr-1">
+                    {monthlyChartData.map((item, index) => {
+                      const total = monthlyChartData.reduce((acc, curr) => acc + curr.value, 0) || 1;
+                      const percentage = ((item.value / total) * 100).toFixed(1);
+                      return (
+                        <div key={item.name} className="flex items-center gap-2 bg-slate-50/70 p-1.5 rounded-lg border border-slate-100/60">
+                          <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}></span>
+                          <div className="min-w-0 flex-1 truncate">
+                            <span className="font-extrabold text-slate-800 block truncate text-[10px] leading-tight">{item.name}</span>
+                            <span className="text-[9.5px] text-slate-500 font-mono font-bold">${item.value} ({percentage}%)</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Chart 2: Fee/Option Type Split */}
+                <div className="space-y-4">
+                  <h4 className="text-[11px] font-extrabold text-slate-700 uppercase tracking-tight flex items-center gap-1.5 border-b border-slate-50 pb-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    Encaissements par Option / Filière
+                  </h4>
+                  <div className="h-44 relative w-full flex items-center justify-center">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={optionChartData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={35}
+                          outerRadius={65}
+                          paddingAngle={3}
+                          dataKey="value"
+                        >
+                          {optionChartData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={CHART_COLORS[(index + 3) % CHART_COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          formatter={(value: any) => [`$${value} USD`, 'Recettes pour l’Option']} 
+                          contentStyle={{ background: '#0f172a', borderRadius: '10px', border: 'none', color: '#fff', fontSize: '10px', fontWeight: 'bold' }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  {/* Detailed Legend List with percentages */}
+                  <div className="grid grid-cols-2 gap-1.5 max-h-32 overflow-y-auto pr-1">
+                    {optionChartData.map((item, index) => {
+                      const total = optionChartData.reduce((acc, curr) => acc + curr.value, 0) || 1;
+                      const percentage = ((item.value / total) * 100).toFixed(1);
+                      return (
+                        <div key={item.name} className="flex items-center gap-2 bg-slate-50/70 p-1.5 rounded-lg border border-slate-100/60">
+                          <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: CHART_COLORS[(index + 3) % CHART_COLORS.length] }}></span>
+                          <div className="min-w-0 flex-1 truncate">
+                            <span className="font-extrabold text-slate-800 block truncate text-[10px] leading-tight">{item.name}</span>
+                            <span className="text-[9.5px] text-slate-500 font-mono font-bold">${item.value} ({percentage}%)</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
       {/* Ledger lists containing Receipts */}
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
         {filteredPayments.length === 0 ? (
@@ -578,15 +745,18 @@ export const PaymentsPanel: React.FC<PaymentsPanelProps> = ({
 
               {/* Header block */}
               <div className="flex justify-between items-start gap-3">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-1.5">
-                    <CongoFlagIcon className="w-7 h-4 rounded-xs border border-slate-100" />
-                    <span className="text-[10px] font-black uppercase text-slate-800">RÉPUBLIQUE DÉMOCRATIQUE DU CONGO</span>
+                <div className="flex items-center gap-2.5">
+                  <CongoCoatOfArms className="w-12 h-12 shrink-0 animate-in fade-in zoom-in-95 duration-200" opacityClassName="opacity-100" />
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5">
+                      <CongoFlagIcon className="w-7 h-4 rounded-xs border border-slate-100" />
+                      <span className="text-[10px] font-black uppercase text-slate-800">RÉPUBLIQUE DÉMOCRATIQUE DU CONGO</span>
+                    </div>
+                    <h4 className="text-[13px] font-black uppercase text-blue-700">{currentSchool.name}</h4>
+                    <p className="text-[8px] text-slate-500 font-mono">
+                      Province: {currentSchool.province} &bull; Ville: {currentSchool.city} &bull; Code: {currentSchool.nationalCode}
+                    </p>
                   </div>
-                  <h4 className="text-[13px] font-black uppercase text-blue-700">{currentSchool.name}</h4>
-                  <p className="text-[8px] text-slate-500 font-mono">
-                    Province: {currentSchool.province} &bull; Ville: {currentSchool.city} &bull; Code: {currentSchool.nationalCode}
-                  </p>
                 </div>
                 
                 <div className="text-right">

@@ -657,14 +657,14 @@ export const StudentsPanel: React.FC<StudentsPanelProps> = ({
 
                 {/* Card Header */}
                 <div className="flex items-center justify-between border-b border-slate-700 pb-1 z-10">
-                  <div className="flex items-center gap-1.5">
-                    <CongoFlagIcon className="w-6 h-4 rounded-xs shrink-0" />
+                  <div className="flex items-center gap-1.5 text-left">
+                    <CongoCoatOfArms className="w-7 h-7 shrink-0" opacityClassName="opacity-100" />
                     <div>
-                      <h5 className="text-[8px] font-black uppercase text-yellow-300 leading-none">RÉPUBLIQUE DÉMOCRATIQUE DU CONGO</h5>
-                      <span className="text-[6px] text-slate-400 uppercase tracking-widest leading-none font-semibold block">{currentSchool.name}</span>
+                      <h5 className="text-[7.5px] font-black uppercase text-yellow-300 leading-none">RÉPUBLIQUE DÉMOCRATIQUE DU CONGO</h5>
+                      <span className="text-[5.5px] text-slate-300 uppercase tracking-widest leading-none font-bold block mt-0.5">{currentSchool.name}</span>
                     </div>
                   </div>
-                  <span className="text-[6px] font-mono text-slate-400">EPST</span>
+                  <span className="text-[6px] font-mono text-slate-400 font-bold bg-slate-800 px-1 py-0.5 rounded">EPST</span>
                 </div>
 
                 {/* Card Body */}

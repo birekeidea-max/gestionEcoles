@@ -1744,16 +1744,19 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
 
                 {/* RDC State Header */}
                 <div className="flex flex-col sm:flex-row justify-between items-center text-center sm:text-left border-b-2 border-slate-800 pb-4 gap-4 relative z-10">
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-center sm:justify-start gap-1.5">
-                      <CongoFlagIcon className="w-8 h-5 rounded-xs shrink-0" />
-                      <span className="text-[10px] font-black tracking-wide text-slate-800 font-sans">RÉPUBLIQUE DÉMOCRATIQUE DU CONGO</span>
+                  <div className="flex flex-col sm:flex-row items-center gap-4">
+                    <CongoCoatOfArms className="w-16 h-16 shrink-0" opacityClassName="opacity-100" />
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-center sm:justify-start gap-1.5">
+                        <CongoFlagIcon className="w-8 h-5 rounded-xs shrink-0" />
+                        <span className="text-[10px] font-black tracking-wide text-slate-800 font-sans">RÉPUBLIQUE DÉMOCRATIQUE DU CONGO</span>
+                      </div>
+                      <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-500 font-sans">MINISTÈRE DE L’ENSEIGNEMENT PRIMAIRE, SECONDAIRE ET TECHNIQUE</h4>
+                      <p className={`text-[15px] font-extrabold tracking-tight ${theme.primaryText}`}>{schoolObj.name}</p>
+                      <p className="text-[9px] text-slate-550 font-mono">
+                        PROVINCE: <span className="font-extrabold text-slate-850">{schoolObj.province}</span> &bull; CODE ÉTABLISSEMENT RDC: <span className="font-mono text-slate-800 font-bold">{schoolObj.nationalCode}</span>
+                      </p>
                     </div>
-                    <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-500 font-sans">MINISTÈRE DE L’ENSEIGNEMENT PRIMAIRE, SECONDAIRE ET TECHNIQUE</h4>
-                    <p className={`text-[15px] font-extrabold tracking-tight ${theme.primaryText}`}>{schoolObj.name}</p>
-                    <p className="text-[9px] text-slate-500 font-mono">
-                      PROVINCE: <span className="font-extrabold text-slate-850">{schoolObj.province}</span> &bull; CODE ÉTABLISSEMENT RDC: <span className="font-mono text-slate-800 font-bold">{schoolObj.nationalCode}</span>
-                    </p>
                   </div>
 
                   <div className="text-center sm:text-right">
