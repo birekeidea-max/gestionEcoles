@@ -67,6 +67,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [matricule, setMatricule] = useState('');
+  const [agentPasswordInput, setAgentPasswordInput] = useState('012000');
   const [axe, setAxe] = useState('Kinshasa-Est');
   const [role, setRole] = useState<UserRole>('Préfet des études');
   const approvedSchools = schools.filter(s => s.isApproved !== false);
@@ -100,6 +101,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
       if (next >= 10) {
         setShowCentralPortal(true);
         setAuthMode('SUPER_ADMIN');
+        setAdminEmail('birekeidea@gmail.com');
+        setAdminPassword('b012000b');
+        setDatabaseSecretInput('012000');
         return 0; // Reset consecutive clicks
       }
       return next;
@@ -153,6 +157,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
         if (parsed.customSchoolProvince) setCustomSchoolProvince(parsed.customSchoolProvince);
         if (parsed.customSchoolNationalCode) setCustomSchoolNationalCode(parsed.customSchoolNationalCode);
         if (parsed.selectedSchoolId) setSelectedSchoolId(parsed.selectedSchoolId);
+        if (parsed.agentPasswordInput) setAgentPasswordInput(parsed.agentPasswordInput);
       } catch (e) {
         console.error("Erreur lors de la recouverte des identifiants mémorisés:", e);
       }
@@ -329,7 +334,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
         schoolId: 'all',
         email,
         matricule,
-        axe: (role === 'Inspecteur' || role === 'Coordinateur') ? axe : undefined
+        axe: (role === 'Inspecteur' || role === 'Coordinateur') ? axe : undefined,
+        password: 'Agent012000'
       });
       return;
     }
@@ -405,7 +411,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
         schoolInputMode,
         customSchoolName,
         customSchoolProvince,
-        customSchoolNationalCode
+        customSchoolNationalCode,
+        agentPasswordInput
       };
       localStorage.setItem('sgesc_remembered_credentials', JSON.stringify(credentialsToSave));
     } else {
@@ -418,7 +425,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
       role,
       schoolId: targetSchoolId,
       email,
-      matricule
+      matricule,
+      password: agentPasswordInput
     });
   };
 
@@ -663,8 +671,17 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
         {/* Header containing Emblem details */}
         <div className="text-center relative">
           <div className="flex justify-center mb-3">
-            <span onClick={handleFlagClick} className="relative inline-block select-none" title="Drapeau RDC">
-              <CongoFlagIcon className="w-16 h-10 shadow-md border border-slate-100 rounded-sm" />
+            <span 
+              onClick={handleFlagClick} 
+              className="relative inline-block select-none cursor-pointer hover:scale-110 active:scale-95 transition-all duration-150 group" 
+              title="Drapeau RDC (Double-Clique ou Clics Successifs)"
+            >
+              <CongoFlagIcon className="w-16 h-10 shadow-md border border-slate-100 rounded-sm group-hover:shadow-lg transition-shadow" />
+              {flagClicks > 0 && (
+                <span className="absolute -top-1 -right-1 bg-blue-600 text-white font-mono text-[9px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center border border-white animate-pulse">
+                  {flagClicks}
+                </span>
+              )}
             </span>
           </div>
 
@@ -1131,6 +1148,26 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
                         />
                         <p className="text-[9.5px] text-slate-400 mt-1">
                           Saisissez votre numéro matricule officiel d'établissement homologué EPST.
+                        </p>
+                      </div>
+
+                      {/* Mot de passe de Connexion d'Agent */}
+                      <div>
+                        <label htmlFor="agent-password" className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1 flex items-center gap-1">
+                          <span className="text-sky-600 font-extrabold text-[12px] leading-none">🔑</span>
+                          Mot de passe de Connexion d'Agent *
+                        </label>
+                        <input
+                          id="agent-password"
+                          type="password"
+                          required
+                          value={agentPasswordInput}
+                          onChange={(e) => setAgentPasswordInput(e.target.value)}
+                          placeholder="Définissez votre clé d'accès (Sera visible sur le Portail d'Admin)"
+                          className="w-full rounded-xl border border-slate-300 py-2.5 px-3.5 text-sm shadow-sm focus:border-sky-500 focus:outline-hidden focus:ring-2 focus:ring-sky-500/20 text-slate-800 font-medium"
+                        />
+                        <p className="text-[9.5px] text-slate-400 mt-1">
+                          Saisissez le mot de passe (clé d'accès) visible par la direction informatique nationale.
                         </p>
                       </div>
                     </>

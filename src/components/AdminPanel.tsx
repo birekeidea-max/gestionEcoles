@@ -93,6 +93,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [uRole, setURole] = useState<UserRole>('Enseignant');
   const [uSchoolId, setUSchoolId] = useState(schools[0]?.id || 'sc-1');
   const [uMatricule, setUMatricule] = useState('');
+  const [uPassword, setUPassword] = useState('');
 
   // School Forms state
   const [isAddingSchool, setIsAddingSchool] = useState(false);
@@ -300,7 +301,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             email: uEmail,
             role: uRole,
             schoolId: uSchoolId,
-            matricule: uMatricule.trim() || usr.matricule || `${Math.floor(100000 + Math.random() * 900000)}-X`
+            matricule: uMatricule.trim() || usr.matricule || `${Math.floor(100000 + Math.random() * 900000)}-X`,
+            password: uPassword.trim() || usr.password || '012000'
           };
         }
         return usr;
@@ -314,6 +316,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         role: uRole,
         schoolId: uSchoolId,
         matricule: uMatricule.trim() || `${Math.floor(1000000 + Math.random() * 9000000)}-${'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random() * 26)]}`,
+        password: uPassword.trim() || '012000',
         timestamp: new Date().toLocaleString('fr-CD')
       };
       setAllUsers(prev => [newUser, ...prev]);
@@ -330,6 +333,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     setUEmail(usr.email || '');
     setUSchoolId(usr.schoolId);
     setUMatricule(usr.matricule || '');
+    setUPassword(usr.password || '012000');
     setIsAddingUser(false);
   };
 
@@ -346,6 +350,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     setURole('Enseignant');
     setUSchoolId(schools[0]?.id || 'sc-1');
     setUMatricule('');
+    setUPassword('');
   };
 
   const handleSaveSchool = (e: React.FormEvent) => {
@@ -1128,6 +1133,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 </div>
 
                 <div className="space-y-1">
+                  <label className="block text-[10px] font-black uppercase text-slate-500 font-mono">Clé d'Accès / Mot de passe *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Définissez le mot de passe (Ex: 012000)"
+                    value={uPassword}
+                    onChange={(e) => setUPassword(e.target.value)}
+                    className="w-full rounded-xl border border-slate-300 py-2.5 px-3.5 text-xs focus:ring-1 focus:ring-sky-500 font-bold text-slate-850 bg-white"
+                  />
+                </div>
+
+                <div className="space-y-1">
                   <label className="block text-[10px] font-black uppercase text-slate-500 font-mono">Autorisation de niveau / Rôle *</label>
                   <select
                     value={uRole}
@@ -1177,6 +1194,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   <tr className="bg-slate-50 border-b border-slate-150">
                     <th className="py-3 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider font-mono">Identité de l'agent</th>
                     <th className="py-3 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider font-mono">Numéro Matricule</th>
+                    <th className="py-3 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider font-mono">Identifiant & Clé d'Accès (Pass)</th>
                     <th className="py-3 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider font-mono">Contrôle d'accès / Fonction</th>
                     <th className="py-3 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider font-mono">Etablissement assigné</th>
                     <th className="py-3 px-4 text-[10px] font-black text-slate-400 uppercase tracking-wider font-mono">Enregistrement (Date CD)</th>
@@ -1187,7 +1205,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 <tbody className="divide-y divide-slate-100 text-xs">
                   {filteredUsers.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-8 text-center text-slate-400 font-medium font-sans">
+                      <td colSpan={8} className="py-8 text-center text-slate-400 font-medium font-sans">
                         Zéro agent trouvé correspondant aux filtres.
                       </td>
                     </tr>
@@ -1213,6 +1231,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                             <span className="bg-slate-100 border border-slate-200/80 text-blue-700 text-[10.5px] px-2 py-0.5 rounded font-black">
                               {matriculeFallback}
                             </span>
+                          </td>
+                          <td className="py-3.5 px-4 font-mono text-xs">
+                            <div className="space-y-0.5">
+                              <div className="text-slate-700">
+                                <span className="font-bold text-slate-400">ID: </span>
+                                <span className="font-semibold">{usr.email || usr.phone || usr.fullName}</span>
+                              </div>
+                              <div className="text-slate-600 font-bold bg-amber-50 border border-amber-200/50 px-1.5 py-0.5 rounded inline-block">
+                                <span className="text-amber-500 text-[10px]">🔑 PASS:</span> <span className="text-[#D32F2F] text-[11px] select-all font-black">{usr.password || '012000'}</span>
+                              </div>
+                            </div>
                           </td>
                           <td className="py-3.5 px-4">
                             <span className={`inline-block px-2.5 py-0.5 rounded text-[9.5px] font-black uppercase tracking-wider ${

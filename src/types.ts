@@ -22,6 +22,7 @@ export interface User {
   matricule?: string;
   isOnline?: boolean;
   axe?: string;
+  password?: string;
 }
 
 export type SchoolOption =
