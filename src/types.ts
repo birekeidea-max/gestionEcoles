@@ -180,4 +180,20 @@ export interface UserActivity {
   details?: string;
 }
 
+export interface AttendanceRecord {
+  id: string;
+  date: string; // 'YYYY-MM-DD'
+  schoolId: string;
+  classLevel: SchoolClassLevel;
+  option: SchoolOption;
+  studentsAttendance: {
+    studentId: string;
+    studentName: string;
+    status: 'PRESENT' | 'ABSENT' | 'RETARD';
+    notes?: string;
+  }[];
+  checkedBy: string;
+}
+
+
 

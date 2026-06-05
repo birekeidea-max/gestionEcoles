@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { User, Student, School, SchoolClassLevel, SchoolOption, LessonPreparation, ClassJournalEntry } from '../types';
+import React, { useState, useRef, useEffect } from 'react';
+import { User, Student, School, SchoolClassLevel, SchoolOption, LessonPreparation, ClassJournalEntry, Bulletin } from '../types';
 import { SCHOOL_OPTIONS, CLASS_LEVELS, COURSES_BY_OPTION, INITIAL_LESSONS, INITIAL_JOURNAL } from '../constants';
 import { CongoFlagIcon, CongoCoatOfArms } from './CongoTheme';
 import { 
@@ -36,7 +36,7 @@ export const PedagogyPanel: React.FC<PedagogyPanelProps> = ({
   teacherName,
   allUsers
 }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'COTATION' | 'PREPARATION' | 'JOURNAL' | 'TEACHERS'>('COTATION');
+  const [activeSubTab, setActiveSubTab] = useState<'COTATION' | 'PREPARATION' | 'JOURNAL' | 'TEACHERS' | 'PRESENCES'>('COTATION');
   const [teacherSearchQuery, setTeacherSearchQuery] = useState('');
 
   // Filter school-specific students
@@ -46,6 +46,7 @@ export const PedagogyPanel: React.FC<PedagogyPanelProps> = ({
   const cotationInputRef = useRef<HTMLInputElement>(null);
   const prepInputRef = useRef<HTMLInputElement>(null);
   const journalInputRef = useRef<HTMLInputElement>(null);
+  const attendanceInputRef = useRef<HTMLInputElement>(null);
 
   // Generic file download helper
   const downloadFile = (content: string, filename: string) => {
@@ -60,6 +61,186 @@ export const PedagogyPanel: React.FC<PedagogyPanelProps> = ({
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
     }, 0);
+  };
+
+  // --- SUB-SEC 5: ATTENDANCE/PRESENCES STATES ---
+  const [attendanceDate, setAttendanceDate] = useState<string>(() => {
+    const today = new Date();
+    const y = today.getFullYear();
+    const m = String(today.getMonth() + 1).padStart(2, '0');
+    const d = String(today.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  });
+  const [attendanceClassName, setAttendanceClassName] = useState<SchoolClassLevel>('4ème Des humanités');
+  const [attendanceOptionName, setAttendanceOptionName] = useState<SchoolOption>('Latin-Philo');
+  
+  // Entire attendance database loaded
+  const [attendanceRecords, setAttendanceRecords] = useState<any[]>(() => {
+    try {
+      const stored = localStorage.getItem('sgesc_attendances');
+      if (stored) return JSON.parse(stored);
+    } catch (e) {
+      console.error("Failed to load attendances:", e);
+    }
+    return [];
+  });
+
+  const [attendanceStatuses, setAttendanceStatuses] = useState<Record<string, 'PRESENT' | 'ABSENT' | 'RETARD'>>({});
+  const [attendanceNotes, setAttendanceNotes] = useState<Record<string, string>>({});
+  const [attendanceSuccessMessage, setAttendanceSuccessMessage] = useState('');
+
+  // Filter students in selected level
+  const activeClassStudents = schoolStudents.filter(
+    s => s.classLevel === attendanceClassName && s.option === attendanceOptionName
+  );
+
+  // Auto-sync attendance sheet with selected Date, Class and Option
+  useEffect(() => {
+    const matchedRecord = attendanceRecords.find(
+      r => r.date === attendanceDate && 
+           r.classLevel === attendanceClassName && 
+           r.option === attendanceOptionName &&
+           r.schoolId === currentSchool.id
+    );
+
+    const newStatuses: Record<string, 'PRESENT' | 'ABSENT' | 'RETARD'> = {};
+    const newNotes: Record<string, string> = {};
+
+    activeClassStudents.forEach(student => {
+      const matchedStudentStatus = matchedRecord?.studentsAttendance?.find(
+        (sa: any) => sa.studentId === student.id
+      );
+
+      newStatuses[student.id] = matchedStudentStatus?.status || 'PRESENT';
+      newNotes[student.id] = matchedStudentStatus?.notes || '';
+    });
+
+    setAttendanceStatuses(newStatuses);
+    setAttendanceNotes(newNotes);
+  }, [attendanceDate, attendanceClassName, attendanceOptionName, attendanceRecords, students]);
+
+  const handleStatusChange = (studentId: string, status: 'PRESENT' | 'ABSENT' | 'RETARD') => {
+    setAttendanceStatuses(prev => ({
+      ...prev,
+      [studentId]: status
+    }));
+  };
+
+  const handleNoteChange = (studentId: string, note: string) => {
+    setAttendanceNotes(prev => ({
+      ...prev,
+      [studentId]: note
+    }));
+  };
+
+  // Save current roll call sheet
+  const handleSaveAttendance = () => {
+    const listPayload = activeClassStudents.map(student => ({
+      studentId: student.id,
+      studentName: student.fullName,
+      status: attendanceStatuses[student.id] || 'PRESENT',
+      notes: attendanceNotes[student.id] || ''
+    }));
+
+    const rollCallId = `ATT-${attendanceDate}-${attendanceClassName.replace(/\s+/g, '')}-${attendanceOptionName.replace(/\s+/g, '')}`;
+
+    const newRecord = {
+      id: rollCallId,
+      date: attendanceDate,
+      schoolId: currentSchool.id,
+      classLevel: attendanceClassName,
+      option: attendanceOptionName,
+      studentsAttendance: listPayload,
+      checkedBy: teacherName
+    };
+
+    const updatedRecords = attendanceRecords.filter(r => r.id !== rollCallId);
+    const finalRecords = [...updatedRecords, newRecord];
+
+    setAttendanceRecords(finalRecords);
+    localStorage.setItem('sgesc_attendances', JSON.stringify(finalRecords));
+
+    // Propagate absence counts into simulated student school bulletins automatically
+    try {
+      const storedBulletinsStr = localStorage.getItem('sgesc_bulletins');
+      if (storedBulletinsStr) {
+        const bulletins: Bulletin[] = JSON.parse(storedBulletinsStr);
+        let updatedCount = 0;
+        const nextBulletins = bulletins.map(b => {
+          if (b.schoolId === currentSchool.id) {
+            const studentAbsenceCount = finalRecords.reduce((acc, r) => {
+              if (r.schoolId === currentSchool.id && r.studentsAttendance) {
+                const sAtt = r.studentsAttendance.find((sa: any) => sa.studentId === b.studentId);
+                if (sAtt && sAtt.status === 'ABSENT') {
+                  return acc + 1;
+                }
+              }
+              return acc;
+            }, 0);
+            
+            if (b.daysAbsent !== studentAbsenceCount) {
+              updatedCount++;
+              return {
+                ...b,
+                daysAbsent: studentAbsenceCount
+              };
+            }
+          }
+          return b;
+        });
+        if (updatedCount > 0) {
+          localStorage.setItem('sgesc_bulletins', JSON.stringify(nextBulletins));
+        }
+      }
+    } catch (err) {
+      console.error("Failed to propagate final attendances to student bulletins:", err);
+    }
+
+    setAttendanceSuccessMessage("L'appel de classe a été scellé, synchronisé et enregistré sous le registre d'établissement!");
+    setTimeout(() => setAttendanceSuccessMessage(''), 5000);
+  };
+
+  const handleDeleteAttendanceRecord = (recordId: string) => {
+    const updated = attendanceRecords.filter(r => r.id !== recordId);
+    setAttendanceRecords(updated);
+    localStorage.setItem('sgesc_attendances', JSON.stringify(updated));
+  };
+
+  const handleExportAttendance = () => {
+    const filename = `REG_PRESENCES_${currentSchool.name.replace(/\s+/g, '_')}_${attendanceDate}.json`;
+    const payload = JSON.stringify(attendanceRecords, null, 2);
+    downloadFile(payload, filename);
+  };
+
+  const handleImportAttendance = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = JSON.parse(event.target?.result as string);
+        if (Array.isArray(data)) {
+          const merged = [...attendanceRecords];
+          data.forEach(item => {
+            if (item.id && item.studentsAttendance) {
+              const idx = merged.findIndex(v => v.id === item.id);
+              if (idx > -1) merged[idx] = item;
+              else merged.push(item);
+            }
+          });
+          setAttendanceRecords(merged);
+          localStorage.setItem('sgesc_attendances', JSON.stringify(merged));
+          setAttendanceSuccessMessage("Registre d'appel importé et fusionné avec succès !");
+          setTimeout(() => setAttendanceSuccessMessage(''), 5000);
+        } else {
+          alert("Fichier JSON de registre d'appel non-conforme.");
+        }
+      } catch (err) {
+        alert("Erreur technique de décodage JSON.");
+      }
+    };
+    reader.readAsText(file);
+    if (e.target) e.target.value = '';
   };
 
   // --- SUB-SEC 1: COTATION STATES ---
@@ -367,6 +548,15 @@ export const PedagogyPanel: React.FC<PedagogyPanelProps> = ({
           >
             <Users className="w-3.5 h-3.5" />
             Corps Enseignant
+          </button>
+          <button
+            onClick={() => setActiveSubTab('PRESENCES')}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeSubTab === 'PRESENCES' ? 'bg-white text-blue-700 shadow-xs' : 'text-slate-550 hover:bg-white/50'
+            }`}
+          >
+            <ClipboardList className="w-3.5 h-3.5 text-emerald-600" />
+            Appel &amp; Présences
           </button>
         </div>
       </div>
@@ -1191,6 +1381,317 @@ export const PedagogyPanel: React.FC<PedagogyPanelProps> = ({
               </table>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* --- RENDER 5: ENREGISTREMENT ET APPEL DES PRÉSENCES --- */}
+      {activeSubTab === 'PRESENCES' && (
+        <div className="space-y-5 text-left animate-in fade-in duration-200">
+          
+          {/* Hidden Import Selector */}
+          <input 
+            type="file"
+            ref={attendanceInputRef}
+            onChange={handleImportAttendance}
+            accept=".json"
+            className="hidden"
+          />
+
+          {attendanceSuccessMessage && (
+            <div className="p-4 bg-emerald-50 border border-emerald-250 text-emerald-800 rounded-2xl text-xs font-bold font-sans flex items-center gap-2 shadow-xs">
+              <span className="text-lg">✓</span>
+              <span>{attendanceSuccessMessage}</span>
+            </div>
+          )}
+
+          {/* Configuration & Backups Controllers header row */}
+          <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-3xs flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 flex-1 pb-1">
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1.5">Date de l'Appel</label>
+                <input 
+                  type="date"
+                  value={attendanceDate}
+                  onChange={(e) => setAttendanceDate(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold font-mono focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1.5">Niveau de Classe</label>
+                <select
+                  value={attendanceClassName}
+                  onChange={(e) => setAttendanceClassName(e.target.value as SchoolClassLevel)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold font-sans cursor-pointer focus:ring-1 focus:ring-blue-500"
+                >
+                  {CLASS_LEVELS.map(lvl => <option key={lvl} value={lvl}>{lvl}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1.5">Section / Option Organisée</label>
+                <select
+                  value={attendanceOptionName}
+                  onChange={(e) => setAttendanceOptionName(e.target.value as SchoolOption)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold font-sans cursor-pointer focus:ring-1 focus:ring-blue-500"
+                >
+                  {SCHOOL_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.value}</option>)}
+                </select>
+              </div>
+            </div>
+
+            {/* Global Imports/Exports */}
+            <div className="flex items-center gap-2 shrink-0 border-t xl:border-t-0 pt-4 xl:pt-0 border-slate-100">
+              <button
+                onClick={() => attendanceInputRef.current?.click()}
+                className="px-3.5 py-2 hover:bg-slate-50 text-slate-700 bg-white border border-slate-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-3xs cursor-pointer"
+                title="Importer un fichier de registre JSON externe"
+              >
+                <FileUp className="w-4 h-4 text-slate-500" />
+                Importer
+              </button>
+              <button
+                onClick={handleExportAttendance}
+                className="px-3.5 py-2 hover:bg-slate-50 text-slate-700 bg-white border border-slate-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-3xs cursor-pointer"
+                title="Télécharger l'intégralité du registre d'appel au format de sauvegarde JSON"
+              >
+                <FileDown className="w-4 h-4 text-slate-500" />
+                Exporter Registre
+              </button>
+            </div>
+          </div>
+
+          {/* Bento-style Realtime Attendance Tickers */}
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5">
+            <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-4 text-left shadow-3xs">
+              <span className="text-slate-500 font-bold block text-[10px] uppercase font-mono tracking-wider">Total Écoliers</span>
+              <span className="text-2xl font-black font-sans text-blue-900 block mt-1">{activeClassStudents.length}</span>
+              <span className="text-[9.5px] text-blue-700 font-medium block mt-0.5">élèves enregistrés</span>
+            </div>
+            
+            <div className="bg-emerald-50/70 border border-emerald-100 rounded-2xl p-4 text-left shadow-3xs">
+              <span className="text-emerald-700/80 font-bold block text-[10px] uppercase font-mono tracking-wider">Présents</span>
+              <span className="text-2xl font-black font-sans text-emerald-800 block mt-1">
+                {activeClassStudents.filter(s => attendanceStatuses[s.id] === 'PRESENT').length}
+              </span>
+              <span className="text-[9.5px] text-emerald-600 font-bold block mt-0.5">en classe aujourd'hui</span>
+            </div>
+
+            <div className="bg-rose-50/70 border border-rose-100 rounded-2xl p-4 text-left shadow-3xs">
+              <span className="text-rose-700/80 font-bold block text-[10px] uppercase font-mono tracking-wider">Absents</span>
+              <span className="text-2xl font-black font-sans text-rose-800 block mt-1">
+                {activeClassStudents.filter(s => attendanceStatuses[s.id] === 'ABSENT').length}
+              </span>
+              <span className="text-[9.5px] text-rose-650 font-bold block mt-0.5">manquants (appel)</span>
+            </div>
+
+            <div className="bg-amber-50/70 border border-amber-100 rounded-2xl p-4 text-left shadow-3xs">
+              <span className="text-amber-700/80 font-bold block text-[10px] uppercase font-mono tracking-wider">Retards</span>
+              <span className="text-2xl font-black font-sans text-amber-800 block mt-1">
+                {activeClassStudents.filter(s => attendanceStatuses[s.id] === 'RETARD').length}
+              </span>
+              <span className="text-[9.5px] text-amber-600 font-bold block mt-0.5">arrivées tardives</span>
+            </div>
+
+            <div className="col-span-2 lg:col-span-1 bg-indigo-50/60 border border-indigo-100 rounded-2xl p-4 text-left shadow-3xs">
+              <span className="text-indigo-800 font-bold block text-[10px] uppercase font-mono tracking-wider">Taux d'Assiduité</span>
+              <span className="text-2xl font-black font-sans text-indigo-900 block mt-1">
+                {activeClassStudents.length > 0 
+                  ? Math.round((activeClassStudents.filter(s => attendanceStatuses[s.id] === 'PRESENT').length / activeClassStudents.length) * 100)
+                  : 100}%
+              </span>
+              <span className="text-[9.5px] text-indigo-600 block font-medium mt-0.5">présences de session</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+            
+            {/* Primary Daily Student Call Sheet Card */}
+            <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4">
+              <div className="flex justify-between items-center bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                <div className="space-y-0.5">
+                  <h3 className="text-xs font-black uppercase text-indigo-950 font-mono">APPEL DE VIGILANCE NATIONALE</h3>
+                  <p className="text-[10px] text-slate-500 font-medium">Déterminez le statut individuel pour chaque élève ci-dessous :</p>
+                </div>
+                <div className="flex gap-2">
+                  <span className="text-[9.5px] font-mono bg-blue-100 text-blue-900 px-2 py-0.5 rounded-md font-bold uppercase select-none">
+                    Dossier Scolaire RDC
+                  </span>
+                </div>
+              </div>
+
+              {activeClassStudents.length === 0 ? (
+                <div className="py-12 text-center text-slate-400 font-medium space-y-2">
+                  <p className="text-sm">Aucun élève inscrit dans cette filière ({attendanceClassName} - {attendanceOptionName}).</p>
+                  <p className="text-xs text-slate-350">Ajoutez des élèves sous le module « Élèves &amp; Inscriptions » pour pouvoir faire l'appel.</p>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
+                  {activeClassStudents.map((student, idx) => {
+                    const status = attendanceStatuses[student.id] || 'PRESENT';
+                    return (
+                      <div 
+                        key={student.id} 
+                        className={`p-3.5 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                          status === 'PRESENT' ? 'bg-emerald-50/10 border-emerald-100/50 hover:bg-emerald-50/20' :
+                          status === 'ABSENT' ? 'bg-rose-50/10 border-rose-100/50 hover:bg-rose-50/20' :
+                          'bg-amber-50/10 border-amber-100/50 hover:bg-amber-50/20'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="w-7 h-7 flex items-center justify-center bg-slate-100 text-slate-705 rounded-full font-mono font-bold text-[10.5px]">
+                            {idx + 1}
+                          </span>
+                          <div className="text-left">
+                            <span className="font-extrabold text-slate-900 block text-xs uppercase tracking-wide leading-none">{student.fullName}</span>
+                            <span className="text-[9.5px] text-slate-450 font-mono block mt-1 select-all">{student.id} &bull; Sexe: {student.gender}</span>
+                          </div>
+                        </div>
+
+                        {/* Interactive presence flags controllers plus notes */}
+                        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap justify-end">
+                          <input
+                            type="text"
+                            placeholder="Obs. (ex: Malade, Excusé)"
+                            value={attendanceNotes[student.id] || ''}
+                            onChange={(e) => handleNoteChange(student.id, e.target.value)}
+                            className="bg-white border text-[10px] font-medium font-sans border-slate-200 rounded-xl px-2.5 py-1.5 w-32 focus:outline-hidden focus:ring-1 focus:ring-blue-500 placeholder-slate-350"
+                          />
+
+                          <div className="flex rounded-lg bg-slate-100/80 p-0.5 border border-slate-200/50 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => handleStatusChange(student.id, 'PRESENT')}
+                              className={`px-2.5 py-1 rounded-md text-[10px] font-black transition-all cursor-pointer ${
+                                status === 'PRESENT' 
+                                  ? 'bg-emerald-700 text-white shadow-xs' 
+                                  : 'text-slate-450 hover:bg-slate-200'
+                              }`}
+                            >
+                              P
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleStatusChange(student.id, 'ABSENT')}
+                              className={`px-2.5 py-1 rounded-md text-[10px] font-black transition-all cursor-pointer ${
+                                status === 'ABSENT' 
+                                  ? 'bg-rose-600 text-white shadow-xs' 
+                                  : 'text-slate-450 hover:bg-slate-200'
+                              }`}
+                            >
+                              A
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleStatusChange(student.id, 'RETARD')}
+                              className={`px-2.5 py-1 rounded-md text-[10px] font-black transition-all cursor-pointer ${
+                                status === 'RETARD' 
+                                  ? 'bg-amber-500 text-white shadow-xs' 
+                                  : 'text-slate-450 hover:bg-slate-200'
+                              }`}
+                            >
+                              R
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {activeClassStudents.length > 0 && (
+                <div className="pt-4 border-t border-slate-100 flex justify-end">
+                  <button
+                    onClick={handleSaveAttendance}
+                    className="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-2xl shadow-md transition-all flex items-center gap-2 cursor-pointer"
+                  >
+                    <Save className="w-4 h-4" />
+                    Valider &amp; Sceller l'Appel du Jour
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Sidebar Archived roll calls History panel */}
+            <div className="bg-slate-50 rounded-3xl border border-slate-200 p-6 space-y-4">
+              <div className="space-y-1 text-left">
+                <h3 className="text-xs font-black uppercase text-indigo-950 font-mono flex items-center gap-1.5">
+                  📁 ARCHIVES DE L'ÉTABLISSEMENT
+                </h3>
+                <p className="text-[10px] text-slate-500 font-medium">Historique complet des signatures d'appels archivés cette session :</p>
+              </div>
+
+              <div className="space-y-2.5 max-h-[50vh] overflow-y-auto pr-1">
+                {attendanceRecords.filter(r => r.schoolId === currentSchool.id).length === 0 ? (
+                  <div className="py-8 text-center text-slate-400 text-xs font-medium border border-dashed border-slate-200 rounded-2xl bg-white leading-relaxed">
+                    Aucun registre d'appel scellé pour le moment.<br />Saisissez l'appel de vos classes périodiquement.
+                  </div>
+                ) : (
+                  [...attendanceRecords]
+                    .filter(r => r.schoolId === currentSchool.id)
+                    .sort((a, b) => b.date.localeCompare(a.date))
+                    .map((rec) => {
+                      const totalPresents = rec.studentsAttendance?.filter((sa: any) => sa.status === 'PRESENT').length || 0;
+                      const totalAbsents = rec.studentsAttendance?.filter((sa: any) => sa.status === 'ABSENT').length || 0;
+                      const totalTot = rec.studentsAttendance?.length || 0;
+                      
+                      return (
+                        <div 
+                          key={rec.id} 
+                          className="bg-white p-3.5 rounded-2xl border border-slate-200 hover:border-blue-400 text-left space-y-2 shadow-3xs transition-all"
+                        >
+                          <div className="flex justify-between items-center">
+                            <span className="font-mono font-black text-xs text-blue-900 block bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
+                              📅 {rec.date}
+                            </span>
+                            <button
+                              onClick={() => handleDeleteAttendanceRecord(rec.id)}
+                              className="p-1 hover:bg-rose-50 text-rose-500 rounded-lg transition-colors cursor-pointer"
+                              title="Dé-sceller et supprimer ce registre"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                          
+                          <div className="text-[10px] text-slate-500 space-y-0.5 leading-tight font-medium">
+                            <span className="block font-black text-slate-700 uppercase">{rec.classLevel} &bull; {rec.option}</span>
+                            <span className="block italic mt-1.5">Signataire: {rec.checkedBy || 'Enseignant Certifié'}</span>
+                          </div>
+
+                          <div className="pt-2 border-t border-slate-100 flex justify-between items-center text-[10.5px] font-mono">
+                            <span className="text-emerald-700 font-bold">✓ {totalPresents} Présents</span>
+                            <span className="text-rose-600 font-bold">✗ {totalAbsents} Absents</span>
+                            <span className="text-slate-400 font-medium">Tot: {totalTot}</span>
+                          </div>
+                          
+                          <div className="pt-1.5">
+                            <button
+                              onClick={() => {
+                                setAttendanceDate(rec.date);
+                                setAttendanceClassName(rec.classLevel);
+                                setAttendanceOptionName(rec.option);
+                              }}
+                              className="w-full text-center py-1 bg-slate-100 font-sans hover:bg-indigo-50 hover:text-indigo-900 rounded-lg text-[9.5px] font-black text-slate-500 uppercase tracking-widest transition-all cursor-pointer"
+                            >
+                              Charger l'appel
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })
+                )}
+              </div>
+
+              {/* Attendance compliance assurance badge */}
+              <div className="p-3 bg-indigo-50/50 rounded-2xl border border-indigo-100/70 text-[9.5px] text-slate-500 leading-relaxed text-left flex gap-1.5">
+                <Info className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
+                <span>
+                  <strong>Interopérabilité</strong> : Le scellage de la feuille d'appel incrémente automatiquement le compteur d'absence scolaire officiel utilisé par le moteur d'édition de bulletins scolaires.
+                </span>
+              </div>
+            </div>
+
+          </div>
+
         </div>
       )}
 
