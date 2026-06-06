@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import html2canvas from 'html2canvas';
 import { Student, School, SchoolClassLevel, SchoolOption } from '../types';
-import { downloadStudentCardAsPDF } from '../utils/pdfGenerator';
+import { downloadStudentCardAsPDF, convertModernColorsToRgb } from '../utils/pdfGenerator';
 import { SCHOOL_OPTIONS, CLASS_LEVELS } from '../constants';
 import { CongoFlagIcon, CongoCoatOfArms } from './CongoTheme';
 import { Search, UserPlus, FileEdit, Trash2, IdCard, Check, X, ShieldAlert, Image, Calendar, MapPin, Sparkles, Filter, Printer } from 'lucide-react';
@@ -73,21 +73,51 @@ export const StudentsPanel: React.FC<StudentsPanelProps> = ({
         return;
       }
 
-      // Generate front elements canvas at high pixel ratio
-      const canvasFront = await html2canvas(frontEl, {
-        scale: 3,
-        useCORS: true,
-        allowTaint: false,
-        backgroundColor: '#0f172a'
-      });
+      // Temporarily override window.getComputedStyle to translate modern oklch/oklab colors to rgb/rgba
+      const originalGetComputedStyle = window.getComputedStyle;
+      window.getComputedStyle = function (elt, pseudoElt) {
+        const style = originalGetComputedStyle.call(window, elt, pseudoElt);
+        return new Proxy(style, {
+          get(target, prop) {
+            if (prop === 'getPropertyValue') {
+              return function(propName: string) {
+                const val = target.getPropertyValue(propName);
+                return convertModernColorsToRgb(val);
+              };
+            }
+            const val = target[prop as any];
+            if (typeof val === 'function') {
+              return (val as any).bind(target);
+            }
+            if (typeof val === 'string') {
+              return convertModernColorsToRgb(val);
+            }
+            return val;
+          }
+        });
+      };
 
-      // Generate back elements canvas at high pixel ratio
-      const canvasBack = await html2canvas(backEl, {
-        scale: 3,
-        useCORS: true,
-        allowTaint: false,
-        backgroundColor: '#020617'
-      });
+      let canvasFront;
+      let canvasBack;
+      try {
+        // Generate front elements canvas at high pixel ratio
+        canvasFront = await html2canvas(frontEl, {
+          scale: 3,
+          useCORS: true,
+          allowTaint: false,
+          backgroundColor: '#0f172a'
+        });
+
+        // Generate back elements canvas at high pixel ratio
+        canvasBack = await html2canvas(backEl, {
+          scale: 3,
+          useCORS: true,
+          allowTaint: false,
+          backgroundColor: '#020617'
+        });
+      } finally {
+        window.getComputedStyle = originalGetComputedStyle;
+      }
 
       // Create main canvas to merge side-by-side
       const combinedCanvas = document.createElement('canvas');
@@ -798,14 +828,6 @@ export const StudentsPanel: React.FC<StudentsPanelProps> = ({
                 >
                   <span className="text-xs">💾</span>
                   {isDownloadingPdf ? "PDF en cours..." : "Télécharger PDF"}
-                </button>
-                <button
-                  onClick={downloadCardAsImage}
-                  disabled={isDownloadingImage}
-                  className="flex-1 sm:flex-none py-1.5 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-800 disabled:opacity-50 text-white text-[11px] font-bold rounded-lg shadow-md flex items-center justify-center gap-1 cursor-pointer font-sans"
-                >
-                  <span className="text-xs">📸</span>
-                  {isDownloadingImage ? "Image en cours..." : "Télécharger Image (PNG)"}
                 </button>
               </div>
             </div>

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { downloadElementAsPDF } from '../utils/pdfGenerator';
 import { User, Student, School, SchoolClassLevel, SchoolOption, LessonPreparation, ClassJournalEntry, Bulletin } from '../types';
 import { SCHOOL_OPTIONS, CLASS_LEVELS, COURSES_BY_OPTION, INITIAL_LESSONS, INITIAL_JOURNAL } from '../constants';
 import { CongoFlagIcon, CongoCoatOfArms } from './CongoTheme';
@@ -206,10 +207,17 @@ export const PedagogyPanel: React.FC<PedagogyPanelProps> = ({
     localStorage.setItem('sgesc_attendances', JSON.stringify(updated));
   };
 
-  const handleExportAttendance = () => {
-    const filename = `REG_PRESENCES_${currentSchool.name.replace(/\s+/g, '_')}_${attendanceDate}.json`;
-    const payload = JSON.stringify(attendanceRecords, null, 2);
-    downloadFile(payload, filename);
+  const handleExportAttendance = async () => {
+    const filename = `FICHE_APPEL_PRESENCES_${currentSchool.name.replace(/\s+/g, '_')}_${attendanceDate}.pdf`;
+    try {
+      await downloadElementAsPDF('printable-attendance-sheet', filename);
+      setAttendanceSuccessMessage("Téléchargement du registre d'appel en format PDF réussi !");
+      setTimeout(() => setAttendanceSuccessMessage(''), 5500);
+    } catch (e) {
+      console.error(e);
+      setAttendanceSuccessMessage("Erreur de génération PDF du registre d'appel.");
+      setTimeout(() => setAttendanceSuccessMessage(''), 5500);
+    }
   };
 
   const handleImportAttendance = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -286,16 +294,17 @@ export const PedagogyPanel: React.FC<PedagogyPanelProps> = ({
   };
 
   // Cotation Export/Import
-  const handleExportCotation = () => {
-    const filename = `FICHE_COTATION_${cotationCourse.toUpperCase().replace(/\s+/g, '_')}_${cotationClass.replace(/\s+/g, '')}.json`;
-    const payload = JSON.stringify({
-      courseName: cotationCourse,
-      classLevel: cotationClass,
-      option: cotationOption,
-      interrogations: interrogations,
-      timestamp: new Date().toISOString()
-    }, null, 2);
-    downloadFile(payload, filename);
+  const handleExportCotation = async () => {
+    const filename = `FICHE_COTATION_${cotationCourse.toUpperCase().replace(/\s+/g, '_')}_${cotationClass.replace(/\s+/g, '')}.pdf`;
+    try {
+      await downloadElementAsPDF('printable-cotation-sheet', filename);
+      setCotationMessage("Grille des cotations exportée en format PDF officielle !");
+      setTimeout(() => setCotationMessage(''), 4000);
+    } catch (e) {
+      console.error(e);
+      setCotationMessage("Échec de la génération PDF de cotations.");
+      setTimeout(() => setCotationMessage(''), 4000);
+    }
   };
 
   const handleImportCotation = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -377,9 +386,14 @@ export const PedagogyPanel: React.FC<PedagogyPanelProps> = ({
   };
 
   // Preps Export/Import
-  const handleExportPreparations = () => {
-    const filename = `FICHES_PREPARATION_PEDAGOGIQUE_${currentSchool.name.replace(/\s+/g, '_')}.json`;
-    downloadFile(JSON.stringify(lessons, null, 2), filename);
+  const handleExportPreparations = async () => {
+    const filename = `FICHES_PREPARATION_PEDAGOGIQUE_${currentSchool.name.replace(/\s+/g, '_')}.pdf`;
+    try {
+      await downloadElementAsPDF('printable-preparations-list', filename);
+    } catch (e) {
+      console.error(e);
+      alert("Échec du téléchargement des fiches de préparation en PDF.");
+    }
   };
 
   const handleImportPreparations = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -462,9 +476,14 @@ export const PedagogyPanel: React.FC<PedagogyPanelProps> = ({
   };
 
   // Journal Export/Import
-  const handleExportJournal = () => {
-    const filename = `JOURNAL_DE_CLASSE_${currentSchool.name.replace(/\s+/g, '_')}.json`;
-    downloadFile(JSON.stringify(journals, null, 2), filename);
+  const handleExportJournal = async () => {
+    const filename = `JOURNAL_DE_CLASSE_${currentSchool.name.replace(/\s+/g, '_')}.pdf`;
+    try {
+      await downloadElementAsPDF('printable-class-journal', filename);
+    } catch (e) {
+      console.error(e);
+      alert("Échec de la génération PDF du journal de classe.");
+    }
   };
 
   const handleImportJournal = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -643,10 +662,10 @@ export const PedagogyPanel: React.FC<PedagogyPanelProps> = ({
                 <button
                   type="button"
                   onClick={handleExportCotation}
-                  className="flex-1 md:flex-none border border-slate-300 bg-white hover:bg-slate-50 py-1.5 px-3 rounded-lg text-xs font-bold text-slate-700 flex items-center justify-center gap-1 cursor-pointer"
+                  className="flex-1 md:flex-none border border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100 py-1.5 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1 cursor-pointer font-sans"
                 >
                   <FileDown className="w-3.5 h-3.5" />
-                  Exporter JSON
+                  Télécharger Grille PDF
                 </button>
                 <button
                   type="button"
@@ -780,10 +799,10 @@ export const PedagogyPanel: React.FC<PedagogyPanelProps> = ({
               </button>
               <button
                 onClick={handleExportPreparations}
-                className="border border-slate-350 bg-white hover:bg-slate-50 text-slate-650 rounded-lg text-xs font-bold py-1.5 px-3 flex items-center gap-1 cursor-pointer"
+                className="border border-slate-350 bg-white hover:bg-slate-50 text-slate-650 rounded-lg text-xs font-bold py-1.5 px-3 flex items-center gap-1 cursor-pointer font-sans"
               >
                 <FileDown className="w-3.5 h-3.5" />
-                Exporter Fiches (JSON)
+                Télécharger Fiches (PDF)
               </button>
               <button
                 onClick={() => setShowPrepModal(true)}
@@ -795,7 +814,7 @@ export const PedagogyPanel: React.FC<PedagogyPanelProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div id="printable-preparations-list" className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {lessons.map((prep) => (
               <div key={prep.id} className="bg-white rounded-xl border border-slate-205 p-5 space-y-3 shadow-xs hover:shadow-md transition-all">
                 <div className="flex justify-between items-start border-b pb-2">
@@ -863,10 +882,10 @@ export const PedagogyPanel: React.FC<PedagogyPanelProps> = ({
               </button>
               <button
                 onClick={handleExportJournal}
-                className="border border-slate-350 bg-white hover:bg-slate-50 text-slate-650 rounded-lg text-xs font-bold py-1.5 px-3 flex items-center gap-1 cursor-pointer"
+                className="border border-slate-350 bg-white hover:bg-slate-50 text-slate-650 rounded-lg text-xs font-bold py-1.5 px-3 flex items-center gap-1 cursor-pointer font-sans"
               >
                 <FileDown className="w-3.5 h-3.5" />
-                Exporter Journal
+                Télécharger Journal (PDF)
               </button>
               <button
                 onClick={() => setShowJournalModal(true)}
@@ -880,7 +899,7 @@ export const PedagogyPanel: React.FC<PedagogyPanelProps> = ({
 
           <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-700">
+              <table id="printable-class-journal" className="w-full text-left text-xs text-slate-700 bg-white">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase font-mono">
                     <th className="py-2.5 px-4 w-28">Date de séance</th>
@@ -1149,11 +1168,17 @@ export const PedagogyPanel: React.FC<PedagogyPanelProps> = ({
             <div className="flex justify-end p-4 border-t bg-slate-50 gap-2 shrink-0 rounded-b-2xl">
               <button
                 type="button"
-                onClick={() => window.print()}
-                className="py-1.5 px-4 bg-indigo-650 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow flex items-center gap-1 cursor-pointer"
+                onClick={async () => {
+                  try {
+                    const pdfName = `PREPARATION_DE_COURS_${selectedPrepView.subjectTitle.toUpperCase().replace(/\s+/g, '_')}.pdf`;
+                    await downloadElementAsPDF('prep-sheet-printable', pdfName);
+                  } catch (e) {
+                    console.error("Failed to download prep as PDF", e);
+                  }
+                }}
+                className="py-1.5 px-4 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow flex items-center gap-1 cursor-pointer font-sans"
               >
-                <Printer className="w-3.5 h-3.5" />
-                Imprimer Préparation
+                📥 Télécharger Préparation (PDF)
               </button>
             </div>
           </div>
@@ -1505,7 +1530,7 @@ export const PedagogyPanel: React.FC<PedagogyPanelProps> = ({
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
             
             {/* Primary Daily Student Call Sheet Card */}
-            <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4">
+            <div id="printable-attendance-sheet" className="lg:col-span-2 bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4">
               <div className="flex justify-between items-center bg-slate-50 p-4 rounded-2xl border border-slate-100">
                 <div className="space-y-0.5">
                   <h3 className="text-xs font-black uppercase text-indigo-950 font-mono">APPEL DE VIGILANCE NATIONALE</h3>

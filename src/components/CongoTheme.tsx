@@ -1,4 +1,5 @@
 import React from 'react';
+import rdcArms from '../assets/images/rdc_arms_vector_official_1780580574047.png';
 
 export const CongoFlagIcon: React.FC<{ className?: string }> = ({ className = 'w-10 h-6' }) => (
   <svg viewBox="0 0 800 600" className={`${className} shadow-sm rounded overflow-hidden`} xmlns="http://www.w3.org/2000/svg">
@@ -27,7 +28,7 @@ export const CongoCoatOfArms: React.FC<{ className?: string; opacityClassName?: 
 }) => (
   <div className={`${className} ${opacityClassName} flex items-center justify-center pointer-events-none select-none transition-all overflow-hidden`}>
     <img 
-      src="/src/assets/images/rdc_arms_vector_official_1780580574047.png" 
+      src={rdcArms} 
       alt="Armoiries de la RDC" 
       className="w-full h-full object-contain mix-blend-multiply"
       referrerPolicy="no-referrer"

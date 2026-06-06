@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { UserRole } from '../types';
 import { SCHOOL_OPTIONS, INITIAL_SCHOOLS, PROVINCES_26 } from '../constants';
 import { CongoCoatOfArms, CongoFlagIcon } from './CongoTheme';
+import secSchoolHero from '../assets/images/sec_school_hero_1780578435655.png';
 import { 
   ShieldCheck, 
   School, 
@@ -700,7 +701,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
           {/* Majestic Ministerial School Education Banner */}
           <div className="mt-4 rounded-2xl overflow-hidden border border-slate-200/80 shadow-3xs aspect-video bg-slate-50 relative group">
             <img 
-              src="/src/assets/images/sec_school_hero_1780578435655.png" 
+              src={secSchoolHero} 
               alt="EPST RDC Éducation et Excellence Académique"
               className="w-full h-full object-cover select-none transition-transform duration-500 group-hover:scale-[1.01]"
               referrerPolicy="no-referrer"

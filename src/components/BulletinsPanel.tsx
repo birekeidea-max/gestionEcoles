@@ -509,7 +509,7 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
     }, 1200);
   };
 
-  const handleSaveBulletinForm = (e: React.FormEvent) => {
+  const handleSaveBulletinForm = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
 
@@ -640,8 +640,8 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
       const autoFile: ArchivedFile = {
         id: `FILE-ARCHIVE-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         schoolId: formSchoolId,
-        fileName: `bulletin_${studName.replace(/\s+/g, '_').toLowerCase()}_${preparedBulletin.id.slice(-4)}.png`,
-        fileType: 'image/png',
+        fileName: `bulletin_${studName.replace(/\s+/g, '_').toLowerCase()}_${preparedBulletin.id.slice(-4)}.pdf`,
+        fileType: 'application/pdf',
         savedDate: new Date().toLocaleString('fr-CD'),
         studentName: studName,
         studentId: preparedBulletin.studentId,
@@ -654,16 +654,11 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
         onSaveArchivedFile(autoFile);
       }
 
-      // DIRECT HARDWARE STORAGE DOWNLOAD
-      // Trigger automatic file download to device's Local File Manager (Downloads)
-      const downloadLink = document.createElement('a');
-      downloadLink.href = dataUrl;
-      downloadLink.download = `SGESC_BULLETIN_${studName.toUpperCase().replace(/\s+/g, '_')}_${preparedBulletin.id.slice(-4)}.png`;
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-      document.body.removeChild(downloadLink);
+      // DIRECT HARDWARE STORAGE DOWNLOAD AS PDF (PDF ONLY POLICY)
+      const pdfName = `SGESC_BULLETIN_${studName.toUpperCase().replace(/\s+/g, '_')}_${preparedBulletin.id.slice(-4)}.pdf`;
+      await downloadImageAsPDF(dataUrl, pdfName);
       
-      showInstantAlert(`Sceau d'Archivage Généré ! Le bulletin de ${studName} a été automatiquement enregistré dans l'application et téléchargé en format image haute résolution dans le gestionnaire de fichiers de votre appareil.`);
+      showInstantAlert(`Sceau d'Archivage Généré ! Le bulletin de ${studName} a été automatiquement enregistré dans l'application et téléchargé au format PDF sécurisé dans le gestionnaire de fichiers de votre appareil.`);
     } catch (e) {
       console.error("Auto Archive failed", e);
     }
@@ -1306,24 +1301,10 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
                         await downloadImageAsPDF(file.imageData, pdfName);
                         showInstantAlert("Téléchargement du document PDF réussi !");
                       }}
-                      className="flex-1 min-w-[100px] py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-black rounded-lg flex items-center justify-center gap-1 cursor-pointer shadow-xs border border-rose-500"
+                      className="flex-1 min-w-[100px] py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-black rounded-lg flex items-center justify-center gap-1 cursor-pointer shadow-xs border border-rose-500 font-sans"
                       title="Télécharger cette image d'archive sous format PDF officiel"
                     >
-                      <span>📥</span> Télécharger PDF (Image)
-                    </button>
-
-                    <button
-                      onClick={async () => {
-                        const link = document.createElement('a');
-                        link.download = file.fileName;
-                        link.href = file.imageData;
-                        link.click();
-                        showInstantAlert("Fichier Image PNG enregistré !");
-                      }}
-                      className="py-1.5 px-2 bg-slate-200 hover:bg-slate-300 text-slate-850 font-bold text-[11px] rounded-lg flex items-center justify-center gap-1 cursor-pointer border border-slate-300"
-                      title="Télécharger directement l'image brute au format PNG"
-                    >
-                      📂 Image PNG
+                      <span>📥</span> Télécharger Bulletin PDF
                     </button>
 
                     <button
@@ -2080,27 +2061,14 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
               <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap justify-end">
                 <button
                   type="button"
-                  onClick={() => {
-                    const link = document.createElement('a');
-                    link.download = selectedArchiveView.fileName;
-                    link.href = selectedArchiveView.imageData;
-                    link.click();
-                    showInstantAlert("Fichier Image PNG enregistré !");
-                  }}
-                  className="py-2 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-xl flex items-center justify-center gap-1 shadow-md cursor-pointer"
-                >
-                  Télécharger PNG
-                </button>
-
-                <button
-                  type="button"
                   onClick={async () => {
                     const pdfName = `SGESC_ARCHIVE_${selectedArchiveView.studentName.toUpperCase().replace(/\s+/g, '_')}_${selectedArchiveView.id}.pdf`;
                     await downloadImageAsPDF(selectedArchiveView.imageData, pdfName);
+                    showInstantAlert("Téléchargement du document PDF réussi !");
                   }}
-                  className="py-2 px-4 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black rounded-xl flex items-center justify-center gap-1 shadow-md cursor-pointer"
+                  className="py-2 px-4 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black rounded-xl flex items-center justify-center gap-1 shadow-md cursor-pointer font-sans"
                 >
-                  Télécharger PDF (Image)
+                  Télécharger Bulletin PDF
                 </button>
 
                 <button
@@ -2179,33 +2147,18 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
               </div>
 
               {/* Action Buttons */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const link = document.createElement('a');
-                    link.download = sharingImage.filename;
-                    link.href = sharingImage.url;
-                    link.click();
-                    showInstantAlert("Fichier Image PNG enregistré avec succès dans votre dossier Téléchargements !");
-                  }}
-                  className="py-3 px-4 bg-emerald-650 hover:bg-emerald-700 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
-                >
-                  <span className="text-sm">📸</span>
-                  Télécharger PNG
-                </button>
-
+              <div className="pt-1">
                 <button
                   type="button"
                   onClick={async () => {
-                    const pdfName = sharingImage.filename.replace(/\.png$/i, '.pdf');
+                    const pdfName = sharingImage.filename.replace(/\.(png|jpg|jpeg)$/i, '') + '.pdf';
                     await downloadImageAsPDF(sharingImage.url, pdfName);
-                    showInstantAlert("Fichier PDF (Image Fidèle) généré et téléchargé avec succès !");
+                    showInstantAlert("Fichier PDF généré et téléchargé avec succès !");
                   }}
-                  className="py-3 px-4 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
+                  className="w-full py-3 px-4 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer font-sans"
                 >
                   <span className="text-sm">📥</span>
-                  Télécharger PDF (Image)
+                  Télécharger au format PDF
                 </button>
               </div>
 

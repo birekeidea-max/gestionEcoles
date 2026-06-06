@@ -231,19 +231,49 @@ export async function downloadStudentCardAsPDF(
   }
 
   try {
-    const canvasFront = await html2canvas(frontEl, {
-      scale: 3,
-      useCORS: true,
-      allowTaint: false,
-      backgroundColor: '#0f172a'
-    });
+    // Override styles to solve OKLCH/OKLAB issues during rendering
+    const originalGetComputedStyle = window.getComputedStyle;
+    window.getComputedStyle = function (elt, pseudoElt) {
+      const style = originalGetComputedStyle.call(window, elt, pseudoElt);
+      return new Proxy(style, {
+        get(target, prop) {
+          if (prop === 'getPropertyValue') {
+            return function(propName: string) {
+              const val = target.getPropertyValue(propName);
+              return convertModernColorsToRgb(val);
+            };
+          }
+          const val = target[prop as any];
+          if (typeof val === 'function') {
+            return (val as any).bind(target);
+          }
+          if (typeof val === 'string') {
+            return convertModernColorsToRgb(val);
+          }
+          return val;
+        }
+      });
+    };
 
-    const canvasBack = await html2canvas(backEl, {
-      scale: 3,
-      useCORS: true,
-      allowTaint: false,
-      backgroundColor: '#020617'
-    });
+    let canvasFront;
+    let canvasBack;
+    try {
+      canvasFront = await html2canvas(frontEl, {
+        scale: 3,
+        useCORS: true,
+        allowTaint: false,
+        backgroundColor: '#0f172a'
+      });
+
+      canvasBack = await html2canvas(backEl, {
+        scale: 3,
+        useCORS: true,
+        allowTaint: false,
+        backgroundColor: '#020617'
+      });
+    } finally {
+      window.getComputedStyle = originalGetComputedStyle;
+    }
 
     const imgFront = canvasFront.toDataURL('image/png');
     const imgBack = canvasBack.toDataURL('image/png');
@@ -302,6 +332,7 @@ export function downloadImageAsPDF(imageDataUrl: string, filename: string): Prom
   return new Promise((resolve) => {
     try {
       const img = new Image();
+      img.crossOrigin = 'anonymous';
       img.src = imageDataUrl;
       img.onload = () => {
         try {
@@ -315,7 +346,20 @@ export function downloadImageAsPDF(imageDataUrl: string, filename: string): Prom
           
           // Create PDF with custom page dimensions matching the image's aspect ratio
           const pdf = new jsPDF('p', 'mm', [pdfWidth, pdfHeight]);
-          pdf.addImage(imageDataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
+
+          // Draw the loaded image onto canvas to format it strictly as a standard PNG data URL.
+          // This avoids "wrong PNG signature" errors for relative images, SVGs, JPEGs or webps.
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          let base64ToUse = imageDataUrl;
+          if (ctx) {
+            ctx.drawImage(img, 0, 0);
+            base64ToUse = canvas.toDataURL('image/png');
+          }
+          
+          pdf.addImage(base64ToUse, 'PNG', 0, 0, pdfWidth, pdfHeight);
           
           const cleanName = filename.endsWith('.pdf') ? filename : `${filename.split('.')[0]}.pdf`;
           pdf.save(cleanName);

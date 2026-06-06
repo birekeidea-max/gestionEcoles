@@ -159,7 +159,7 @@ export interface ArchivedFile {
   id: string;
   schoolId: string;
   fileName: string;
-  fileType: 'image/png';
+  fileType: 'image/png' | 'application/pdf';
   savedDate: string;
   studentName: string;
   studentId: string;

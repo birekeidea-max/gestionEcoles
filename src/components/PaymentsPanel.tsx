@@ -224,8 +224,18 @@ export const PaymentsPanel: React.FC<PaymentsPanelProps> = ({
     if (activeReceipt && shouldAutoDownload) {
       setShouldAutoDownload(false);
       // Wait for receipt element to be rendered clearly in the DOM
-      const timer = setTimeout(() => {
-        downloadReceiptAsImage();
+      const timer = setTimeout(async () => {
+        setIsDownloadingPdf(true);
+        try {
+          const pdfName = `SGESC_RECU_${activeReceipt.id.toUpperCase()}.pdf`;
+          await downloadElementAsPDF('school-receipt-printable', pdfName);
+          showInstantAlert("Reçu officiel PDF généré et téléchargé automatiquement avec succès !");
+        } catch (err) {
+          console.error("Auto PDF receipt down failed:", err);
+          showInstantAlert("Échec du téléchargement automatique du reçu en PDF.");
+        } finally {
+          setIsDownloadingPdf(false);
+        }
       }, 800);
       return () => clearTimeout(timer);
     }
@@ -904,16 +914,6 @@ export const PaymentsPanel: React.FC<PaymentsPanelProps> = ({
               </button>
 
               <button
-                onClick={downloadReceiptAsImage}
-                disabled={isDownloadingImage}
-                className="py-1.5 px-3.5 bg-emerald-650 hover:bg-emerald-700 disabled:bg-emerald-800 disabled:opacity-50 text-white text-[10.5px] font-black rounded-xl shadow-md flex items-center gap-1 cursor-pointer"
-                title="Télécharger l'image brute du reçu au format PNG"
-              >
-                <span className="text-sm">📸</span>
-                {isDownloadingImage ? "Génération..." : "Télécharger PNG"}
-              </button>
-
-              <button
                 onClick={async () => {
                   if (!activeReceipt) return;
                   setIsDownloadingPdf(true);
@@ -929,11 +929,11 @@ export const PaymentsPanel: React.FC<PaymentsPanelProps> = ({
                   }
                 }}
                 disabled={isDownloadingPdf}
-                className="py-1.5 px-3.5 bg-rose-600 hover:bg-rose-700 disabled:bg-rose-800 disabled:opacity-50 text-white text-[10.5px] font-black rounded-xl shadow-md flex items-center gap-1 cursor-pointer"
-                title="Télécharger le reçu inséré proprement au format PDF"
+                className="py-1.5 px-3.5 bg-rose-600 hover:bg-rose-700 disabled:bg-rose-800 disabled:opacity-50 text-white text-[10.5px] font-black rounded-xl shadow-md flex items-center gap-1 cursor-pointer font-sans"
+                title="Télécharger le reçu d'encaissement officiel en format PDF"
               >
                 <span className="text-sm">📥</span>
-                {isDownloadingPdf ? "Téléchargement..." : "Télécharger PDF (Image)"}
+                {isDownloadingPdf ? "Téléchargement..." : "Télécharger Reçu PDF"}
               </button>
             </div>
 
