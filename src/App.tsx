@@ -226,15 +226,14 @@ export default function App() {
       setFlagClicks(0);
     }, 4000);
 
-    setFlagClicks(prev => {
-      const next = prev + 1;
-      if (next >= 10) {
-        setForcedSuperAdmin(true);
-        setActiveTab('ADMIN');
-        return 0; // Reset
-      }
-      return next;
-    });
+    const nextClicks = flagClicks + 1;
+    if (nextClicks >= 10) {
+      setFlagClicks(0);
+      setForcedSuperAdmin(true);
+      setActiveTab('ADMIN');
+    } else {
+      setFlagClicks(nextClicks);
+    }
   };
 
   // States for supervisor central base view

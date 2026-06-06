@@ -97,18 +97,17 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
       setFlagClicks(0);
     }, 4000);
 
-    setFlagClicks(prev => {
-      const next = prev + 1;
-      if (next >= 10) {
-        setShowCentralPortal(true);
-        setAuthMode('SUPER_ADMIN');
-        setAdminEmail('');
-        setAdminPassword('');
-        setDatabaseSecretInput('');
-        return 0; // Reset consecutive clicks
-      }
-      return next;
-    });
+    const nextClicks = flagClicks + 1;
+    if (nextClicks >= 10) {
+      setFlagClicks(0);
+      setShowCentralPortal(true);
+      setAuthMode('SUPER_ADMIN');
+      setAdminEmail('');
+      setAdminPassword('');
+      setDatabaseSecretInput('');
+    } else {
+      setFlagClicks(nextClicks);
+    }
   };
 
   useEffect(() => {
