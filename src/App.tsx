@@ -301,6 +301,10 @@ export default function App() {
 
   const handleLogin = (userData: User) => {
     setCurrentUser(userData);
+    
+    if (userData.role === 'Administrateur') {
+      setActiveTab('ADMIN');
+    }
 
     // Dynamic Activity Logging for Security Audits
     const userSchool = schools.find(s => s.id === userData.schoolId);

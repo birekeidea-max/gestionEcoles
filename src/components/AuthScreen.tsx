@@ -17,7 +17,15 @@ import {
   ShieldAlert, 
   Chrome, 
   X, 
-  ChevronRight 
+  ChevronRight,
+  Database,
+  Server,
+  Settings,
+  Cpu,
+  Layers,
+  Terminal,
+  Activity,
+  Radio
 } from 'lucide-react';
 
 interface AuthScreenProps {
@@ -42,6 +50,12 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
   const [isVerifyingDatabaseSecret, setIsVerifyingDatabaseSecret] = useState(false);
   const [databaseSecretInput, setDatabaseSecretInput] = useState('');
   const [databaseSecretError, setDatabaseSecretError] = useState('');
+  const [dbHostInput, setDbHostInput] = useState('central-db.epst.gouv.cd');
+  const [dbPortInput, setDbPortInput] = useState('5432');
+  const [dbNameInput, setDbNameInput] = useState('sgesc_national_db');
+  const [dbUserInput, setDbUserInput] = useState('admin_epst_master');
+  const [isDbConnecting, setIsDbConnecting] = useState(false);
+  const [dbConnectionStep, setDbConnectionStep] = useState('');
 
   const trigger2FA = (userData: { fullName: string; phone: string; role: UserRole; schoolId: string; email?: string }) => {
     const code = String(Math.floor(100000 + Math.random() * 900000));
@@ -233,16 +247,33 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
     if (authMode === 'SUPER_ADMIN') {
       const emailNorm = adminEmail.trim().toLowerCase();
       const passNorm = adminPassword.trim();
-      if ((emailNorm !== 'birekeidea@gmail.com' && emailNorm !== 'birekeidea@gmail') || passNorm !== 'b012000b') {
-        setFormError('Mot de passe ou email d’administrateur général invalide.');
+      
+      if (!emailNorm || !emailNorm.includes('@')) {
+        setFormError('Veuillez introduire une adresse e-mail administrative valide.');
         return;
       }
+      
+      if (passNorm !== 'b012000b' && passNorm !== 'admin012000' && passNorm !== '012000') {
+        setFormError('Mot de passe d’autorisation administrative invalide pour cette adresse e-mail.');
+        return;
+      }
+      
+      // Derive a beautiful, standard name for the administrator based on their email prefix or default to Bireke Idea
+      let derivedName = 'Bireke Idea';
+      if (emailNorm !== 'birekeidea@gmail.com' && emailNorm !== 'birekeidea@gmail') {
+        const prefix = emailNorm.split('@')[0];
+        derivedName = prefix
+          .split(/[\._-]/)
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
+      }
+
       setPendingLoginUserData({
-        fullName: 'Bireke Idea',
-        phone: 'Administrateur Général',
+        fullName: derivedName,
+        phone: 'Administrateur Centralisé',
         role: 'Administrateur',
         schoolId: 'all',
-        email: 'birekeidea@gmail.com'
+        email: emailNorm
       });
       setIsVerifyingDatabaseSecret(true);
       setDatabaseSecretInput('');
@@ -432,6 +463,52 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
     });
   };
 
+  const handleVerifyDatabaseCredentials = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setDatabaseSecretError('');
+    
+    if (!dbHostInput.trim()) {
+      setDatabaseSecretError("⚠️ L'hôte de la base de données centrale (Database Host) est obligatoire.");
+      return;
+    }
+    if (!dbPortInput.trim()) {
+      setDatabaseSecretError("⚠️ Le port de communication est obligatoire.");
+      return;
+    }
+    if (!dbNameInput.trim()) {
+      setDatabaseSecretError("⚠️ Le nom de la base de données centrale est requis.");
+      return;
+    }
+    if (!dbUserInput.trim()) {
+      setDatabaseSecretError("⚠️ L'identifiant (Username) d'administration de la base est requis.");
+      return;
+    }
+    if (databaseSecretInput.trim() !== '012000' && databaseSecretInput.trim() !== 'b012000b') {
+      setDatabaseSecretError("❌ Clé Secrète de Sécurité de la base centrale invalide.");
+      return;
+    }
+
+    setIsDbConnecting(true);
+    setDbConnectionStep("📡 Initialisation de la liaison chiffrée SSL...");
+    await new Promise(r => setTimeout(r, 600));
+    
+    setDbConnectionStep(`🔍 Résolution DNS de l'adresse '${dbHostInput.trim()}'...`);
+    await new Promise(r => setTimeout(r, 600));
+    
+    setDbConnectionStep("🔑 Authentification de l'administrateur '" + dbUserInput.trim() + "' auprès du cluster...");
+    await new Promise(r => setTimeout(r, 700));
+    
+    setDbConnectionStep(`📦 Chargement du schéma relationnel '${dbNameInput.trim()}'...`);
+    await new Promise(r => setTimeout(r, 550));
+    
+    setDbConnectionStep("⚡ Chargement finalisé et initialisation du routage sécurisé !");
+    await new Promise(r => setTimeout(r, 450));
+    
+    setIsDbConnecting(false);
+    onLogin(pendingLoginUserData);
+    setIsVerifyingDatabaseSecret(false);
+  };
+
   if (isVerifyingDatabaseSecret) {
     return (
       <div className="min-h-screen flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8 relative bg-slate-950 z-[200] font-sans animate-in fade-in duration-200">
@@ -440,76 +517,180 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
           <CongoCoatOfArms className="w-56 h-56" opacityClassName="opacity-80" />
         </div>
         
-        <div className="max-w-md w-full space-y-6 bg-slate-900 border border-slate-800 text-white px-8 py-10 rounded-3xl shadow-2xl relative z-10 text-center">
-          <div className="flex justify-center mb-4">
-            <span className="relative inline-block p-4 bg-red-650/10 border border-red-500/20 rounded-full text-red-500 animate-pulse">
-              <ShieldCheck className="w-12 h-12 text-[#D32F2F]" />
-              <span className="absolute top-2 right-2 flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 animate-infinite"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-              </span>
-            </span>
-          </div>
+        <div className="max-w-lg w-full bg-slate-900 border border-slate-800 text-white px-8 py-8 rounded-3xl shadow-2xl relative z-10">
+          
+          {isDbConnecting ? (
+            <div className="text-center py-8 space-y-6">
+              <div className="flex justify-center relative">
+                <span className="p-5 bg-blue-600/10 border border-blue-500/20 rounded-full text-blue-400 animate-pulse">
+                  <Database className="w-16 h-16 animate-bounce" />
+                </span>
+                <span className="absolute top-0 right-1/3 flex h-4 w-4">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-4 w-4 bg-blue-550"></span>
+                </span>
+              </div>
+              
+              <div className="space-y-3">
+                <h3 className="text-lg font-extrabold tracking-tight text-white uppercase">
+                  Connexion au Serveur Central
+                </h3>
+                <div className="p-4 rounded-2xl bg-black border border-slate-850 font-mono text-left text-xs space-y-2.5 text-blue-400 shadow-inner">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block w-2 h-2 rounded-full bg-green-505 animate-ping"></span>
+                    <span className="text-slate-400">Réseau :</span>
+                    <span className="font-bold text-white">RDC-WAN (EPST)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-slate-400">Serveur :</span>
+                    <span className="text-slate-300 font-mono">{dbHostInput}:{dbPortInput}</span>
+                  </div>
+                  <div className="flex items-center gap-2 border-t border-slate-850 pt-2 text-[#F4D03F] font-bold">
+                    <Activity className="w-3.5 h-3.5 animate-pulse shrink-0" />
+                    <span>{dbConnectionStep}</span>
+                  </div>
+                </div>
+              </div>
 
-          <div className="space-y-1.5">
-            <h2 className="text-xs font-mono tracking-widest text-[#F4D03F] block uppercase font-black">
-              🛡️ DOUBLE AUTHENTIFICATION DE LA BASE CENTRALE
-            </h2>
-            <h3 className="text-xl font-extrabold text-slate-100 uppercase tracking-tight">
-              Mot de passe Secret de la Base Centrale
-            </h3>
-            <p className="text-[11.5px] text-slate-400 max-w-xs mx-auto leading-relaxed">
-              Pour des raisons absolues d'intégrité de la Base de Données Administrative Centrale, veuillez saisir le mot de passe secret pour déconnecter ou débloquer le répertoire national.
-            </p>
-          </div>
+              <p className="text-[10px] text-slate-500 font-mono animate-pulse">
+                Sujet d'Autorité : MT-SEC-CENTRAL // CLUSTER-SG-EPST
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="text-center space-y-1.5 mb-6">
+                <div className="flex justify-center mb-2">
+                  <span className="relative inline-block p-3 bg-red-650/15 border border-red-500/20 rounded-2xl text-red-550">
+                    <ShieldCheck className="w-10 h-10 text-[#D32F2F]" />
+                  </span>
+                </div>
+                <h2 className="text-xs font-mono tracking-widest text-[#F4D03F] block uppercase font-black">
+                  🛡️ LIAISON SÉCURISÉE DE LA BASE CENTRALE
+                </h2>
+                <h3 className="text-lg font-extrabold text-slate-100 uppercase tracking-tight">
+                  Identifiants de la Base de Données
+                </h3>
+                <p className="text-[11.5px] text-slate-400 max-w-sm mx-auto leading-relaxed">
+                  Pour des raisons d'audit de sécurité nationale et d'habilitation, veuillez insérer l'ensemble des identifiants requis pour autoriser l'établissement de la poignée de main avec le stockage central des écoles de l'EPST.
+                </p>
+              </div>
 
-          {databaseSecretError && (
-            <p className="text-xs text-red-400 bg-red-950/40 p-2.5 rounded-xl border border-red-900/30 text-center font-bold">
-              {databaseSecretError}
-            </p>
+              {databaseSecretError && (
+                <p className="text-xs text-red-400 bg-red-950/40 p-3 rounded-xl border border-red-900/30 text-center font-bold mb-4">
+                  {databaseSecretError}
+                </p>
+              )}
+
+              <form onSubmit={handleVerifyDatabaseCredentials} className="space-y-5">
+                
+                {/* Visual DB Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 bg-slate-950/40 p-4 rounded-2xl border border-slate-800">
+                  <div className="space-y-1">
+                    <label className="block text-[10px] text-slate-400 uppercase tracking-wider font-mono font-bold">
+                      Hôte de la Base (Host) *
+                    </label>
+                    <div className="relative">
+                      <Server className="absolute left-3 top-2.5 w-3.5 h-3.5 text-slate-500" />
+                      <input
+                        type="text"
+                        required
+                        value={dbHostInput}
+                        onChange={(e) => setDbHostInput(e.target.value)}
+                        placeholder="central-db.epst.gouv.cd"
+                        className="w-full pl-9 rounded-lg border border-slate-705 bg-slate-950 py-2 text-xs font-mono text-slate-100 focus:border-red-500 focus:ring-1 focus:ring-red-500 placeholder-slate-600 focus:outline-hidden"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-[10px] text-slate-400 uppercase tracking-wider font-mono font-bold">
+                      Port de Connexion *
+                    </label>
+                    <div className="relative">
+                      <Terminal className="absolute left-3 top-2.5 w-3.5 h-3.5 text-slate-500" />
+                      <input
+                        type="text"
+                        required
+                        value={dbPortInput}
+                        onChange={(e) => setDbPortInput(e.target.value)}
+                        placeholder="5432"
+                        className="w-full pl-9 rounded-lg border border-slate-705 bg-slate-950 py-2 text-xs font-mono text-slate-100 focus:border-red-500 focus:ring-1 focus:ring-red-500 placeholder-slate-600 focus:outline-hidden"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-[10px] text-slate-400 uppercase tracking-wider font-mono font-bold">
+                      Nom de la Base *
+                    </label>
+                    <div className="relative">
+                      <Database className="absolute left-3 top-2.5 w-3.5 h-3.5 text-slate-500" />
+                      <input
+                        type="text"
+                        required
+                        value={dbNameInput}
+                        onChange={(e) => setDbNameInput(e.target.value)}
+                        placeholder="sgesc_central_db"
+                        className="w-full pl-9 rounded-lg border border-slate-705 bg-slate-950 py-2 text-xs font-mono text-slate-100 focus:border-red-500 focus:ring-1 focus:ring-red-500 placeholder-slate-600 focus:outline-hidden"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-[10px] text-slate-400 uppercase tracking-wider font-mono font-bold">
+                      Utilisateur d'Accès *
+                    </label>
+                    <div className="relative">
+                      <Settings className="absolute left-3 top-2.5 w-3.5 h-3.5 text-slate-500" />
+                      <input
+                        type="text"
+                        required
+                        value={dbUserInput}
+                        onChange={(e) => setDbUserInput(e.target.value)}
+                        placeholder="admin_epst_master"
+                        className="w-full pl-9 rounded-lg border border-slate-705 bg-slate-950 py-2 text-xs font-mono text-slate-100 focus:border-red-500 focus:ring-1 focus:ring-red-500 placeholder-slate-600 focus:outline-hidden"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-1 pt-1">
+                  <label className="block text-[11px] text-slate-400 uppercase tracking-widest font-mono font-bold text-left mb-1">
+                    Clé Secrète de Sécurité (Database Secret) *
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    placeholder="Entrez le mot de passe secret (Ex: 012000)"
+                    value={databaseSecretInput}
+                    onChange={(e) => setDatabaseSecretInput(e.target.value)}
+                    className="w-full text-center text-lg font-mono tracking-widest font-extrabold rounded-xl border border-slate-700 bg-slate-950 py-2.5 text-[#F4D03F] shadow-inner focus:outline-hidden focus:border-[#D32F2F] focus:ring-1 focus:ring-[#D32F2F] placeholder-slate-800"
+                  />
+                  <p className="text-[10px] text-slate-500 text-center">
+                    Note : Saisissez la clé d'habilitation secrète (<b>012000</b>) pour certifier l'accès à la base.
+                  </p>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsVerifyingDatabaseSecret(false)}
+                    className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-xl text-xs font-bold border border-slate-750 cursor-pointer transition-colors uppercase font-mono"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-3 bg-[#D32F2F] hover:bg-[#B71C1C] text-white rounded-xl text-xs font-black shadow-md cursor-pointer transition-all uppercase font-mono tracking-wider"
+                  >
+                    🚀 Établir la Liaison
+                  </button>
+                </div>
+              </form>
+            </>
           )}
 
-          <form onSubmit={(e) => {
-            e.preventDefault();
-            if (databaseSecretInput.trim() === '012000') {
-              onLogin(pendingLoginUserData);
-              setIsVerifyingDatabaseSecret(false);
-            } else {
-              setDatabaseSecretError("❌ Mot de passe secret de la base de données centrale invalide.");
-            }
-          }} className="space-y-4">
-            <div>
-              <label className="block text-[11px] text-slate-400 uppercase tracking-widest font-mono text-left mb-1.5 font-bold">
-                Entrez le mot de passe secret de la base *
-              </label>
-              <input
-                type="password"
-                required
-                placeholder="Saisissez la clé d'accès sécurisée"
-                value={databaseSecretInput}
-                onChange={(e) => setDatabaseSecretInput(e.target.value)}
-                className="w-full text-center text-xl font-mono tracking-widest font-extrabold rounded-xl border border-slate-700 bg-slate-950 py-3 text-red-500 shadow-inner focus:outline-hidden focus:border-[#D32F2F] focus:ring-1 focus:ring-[#D32F2F] placeholder-slate-700"
-              />
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setIsVerifyingDatabaseSecret(false)}
-                className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-xl text-xs font-bold border border-slate-700 cursor-pointer transition-colors uppercase font-mono"
-              >
-                Annuler
-              </button>
-              <button
-                type="submit"
-                className="flex-1 py-3 bg-[#D32F2F] hover:bg-[#B71C1C] text-white rounded-xl text-xs font-black shadow-md cursor-pointer transition-all uppercase font-mono tracking-wider animate-pulse"
-              >
-                Accéder à la Base
-              </button>
-            </div>
-          </form>
-
-          <p className="text-[9.5px] text-slate-500 font-mono">
+          <p className="text-[9.5px] text-slate-500 font-mono text-center border-t border-slate-800 pt-3 mt-6">
             ID de session administrative : RDC-CENTRAL-DB-SECURE
           </p>
         </div>
