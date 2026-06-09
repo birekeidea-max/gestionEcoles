@@ -1727,8 +1727,8 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
                   <div className="absolute top-0 inset-x-0 h-2 bg-gradient-to-r from-sky-400 via-yellow-400 to-red-500 z-20" />
 
                   {/* Armoiries et Drapeau en fond filigrane - HAUTEMENT VISIBLE ET PROPRE */}
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-                    <CongoCoatOfArms className="w-[460px] h-[460px]" opacityClassName="opacity-[0.38] mix-blend-multiply" />
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 select-none">
+                    <CongoCoatOfArms className="w-[480px] h-[480px]" opacityClassName="opacity-[0.16]" />
                   </div>
 
                   {/* RDC State Header */}

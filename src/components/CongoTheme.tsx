@@ -22,15 +22,16 @@ export const CongoFlagIcon: React.FC<{ className?: string }> = ({ className = 'w
   </svg>
 );
 
-export const CongoCoatOfArms: React.FC<{ className?: string; opacityClassName?: string }> = ({
+export const CongoCoatOfArms: React.FC<{ className?: string; opacityClassName?: string; imgClassName?: string }> = ({
   className = 'w-48 h-48',
-  opacityClassName = 'opacity-[0.35]'
+  opacityClassName = 'opacity-[0.35]',
+  imgClassName = 'w-full h-full object-contain'
 }) => (
   <div className={`${className} ${opacityClassName} flex items-center justify-center pointer-events-none select-none transition-all overflow-hidden`}>
     <img 
       src={rdcArms} 
       alt="Armoiries de la RDC" 
-      className="w-full h-full object-contain mix-blend-multiply"
+      className={imgClassName}
       referrerPolicy="no-referrer"
     />
   </div>

@@ -751,8 +751,8 @@ export const PaymentsPanel: React.FC<PaymentsPanelProps> = ({
             <div id="school-receipt-printable" className="p-6 bg-[#fffbeb] border-2 border-dashed border-amber-300 rounded-xl space-y-4 relative overflow-hidden">
               
               {/* Back watermark */}
-              <div className="absolute inset-0 opacity-[0.45] flex items-center justify-center pointer-events-none">
-                <CongoCoatOfArms className="w-52 h-52" opacityClassName="opacity-100" />
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 select-none">
+                <CongoCoatOfArms className="w-56 h-56" opacityClassName="opacity-[0.15]" />
               </div>
 
               {/* Header block */}

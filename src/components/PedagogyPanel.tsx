@@ -1090,8 +1090,8 @@ export const PedagogyPanel: React.FC<PedagogyPanelProps> = ({
 
             <div id="prep-sheet-printable" className="p-6 md:p-8 overflow-y-auto flex-1 space-y-4 relative">
               
-              <div className="absolute inset-0 flex items-center justify-center opacity-[0.45] pointer-events-none">
-                <CongoCoatOfArms className="w-64 h-64" opacityClassName="opacity-100" />
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 select-none">
+                <CongoCoatOfArms className="w-64 h-64" opacityClassName="opacity-[0.15]" />
               </div>
 
               <div className="border-b-2 border-slate-800 pb-3 flex justify-between items-start relative z-10">

@@ -9,6 +9,8 @@ import { PaymentsPanel } from './components/PaymentsPanel';
 import { BulletinsPanel } from './components/BulletinsPanel';
 import { PedagogyPanel } from './components/PedagogyPanel';
 import { AdminPanel } from './components/AdminPanel';
+import { OfflineSyncHub } from './components/OfflineSyncHub';
+import { AIGuideAssistant } from './components/AIGuideAssistant';
 import { 
   Building2, 
   Users, 
@@ -31,6 +33,13 @@ import {
 export default function App() {
   // Persistence States with initialization from localStorage & fallback to official RDC seed data
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [simulatedOffline, setSimulatedOffline] = useState(() => {
+    return localStorage.getItem('sgesc_simulated_offline') === 'true';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('sgesc_simulated_offline', String(simulatedOffline));
+  }, [simulatedOffline]);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -44,6 +53,8 @@ export default function App() {
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
+
+  const isActuallyOnline = isOnline && !simulatedOffline;
 
   const [schools, setSchools] = useState<School[]>(() => {
     const local = localStorage.getItem('sgesc_schools');
@@ -442,7 +453,7 @@ export default function App() {
                   STATUT CONFORME
                 </span>
                 
-                {isOnline ? (
+                {isActuallyOnline ? (
                   <span className="text-[9px] bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded font-mono font-bold uppercase tracking-wider flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                     En ligne (Local Sécurisé)
@@ -824,6 +835,23 @@ export default function App() {
                 ) : (
                   /* 🏫 SCHOOL ADMINISTRATIVE DASHBOARD (Default view) */
                   <>
+                    {/* Offline Synchronization Hub */}
+                    <OfflineSyncHub 
+                      isOnline={isOnline}
+                      simulatedOffline={simulatedOffline}
+                      setSimulatedOffline={setSimulatedOffline}
+                      schools={schools}
+                      students={students}
+                      payments={payments}
+                      bulletins={bulletins}
+                      onImportData={({ schools: importedSchools, students: importedStudents, payments: importedPayments, bulletins: importedBulletins }) => {
+                        if (importedSchools) setSchools(importedSchools);
+                        if (importedStudents) setStudents(importedStudents);
+                        if (importedPayments) setPayments(importedPayments);
+                        if (importedBulletins) setBulletins(importedBulletins);
+                      }}
+                    />
+
                     {/* Primary dynamic statistics of the school */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="bg-white p-5 rounded-2xl border border-slate-200 flex items-center gap-4 hover:shadow-sm transition-all">
@@ -1184,6 +1212,9 @@ export default function App() {
         onClose={() => setIsScannerOpen(false)}
         initialCode={scanCode}
       />
+
+      {/* AI Assistant Guide for SGESC-RDC platform */}
+      <AIGuideAssistant />
 
     </div>
   );
