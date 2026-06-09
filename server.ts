@@ -47,14 +47,23 @@ Pour les territoires éloignés ou en cas de panne réseau :
 3. **Restauration de Liaison** : Activez **"En ligne"** et cliquez sur **"Forcer la Synchronisation"** pour pousser instantanément toutes vos modifications vers Kinshasa dès le retour du signal.
 
 *Note : Fonctionnement en mode d'assistance locale de secours.*`;
-  } else if (query.includes('pedagogie' ) || query.includes('enseignant') || query.includes('cours') || query.includes('classe') || query.includes('présence') || query.includes('fiche de prep')) {
-    return `### 📚 Le Portail Pédagogique des Enseignants
+  } else if (query.includes('pedagogie' ) || query.includes('enseignant') || query.includes('cours') || query.includes('classe') || query.includes('présence') || query.includes('presence') || query.includes('appel') || query.includes('fiche de prep')) {
+    return `### 📚 Le Portail Pédagogique des Enseignants & Gestion des Présences (Appel)
 
-Cet espace est dédié aux inspecteurs et chargés de cours :
-1. **Fiche de Présence** : Générez et gérez la liste d'appel quotidienne pour le suivi des absences d'élèves.
-2. **Fiches de Préparation de Leçon** : Un utilitaire complet pour formuler le sujet du cours, les objectifs opérationnels, et l'exposé pédagogique. Imprimez-les directement sous forme de fiche officielle normalisée par l'EPST.
-3. **Journal de Classe** : Enregistrez le sujet matière par heure de cours pour tenir le cahier d'activités scolaires de manière transparente.
-4. **Fiche de Cotation** : Enregistrez les points des devoirs et interrogations périodiques pour préparer aisément le remplissage des bulletins finaux.
+La plateforme SGESC-RDC intègre d'ores et déjà un **onglet complet pour la gestion quotidienne de l'Appel et des Présences des élèves** :
+
+1. **Où le trouver** : Rendez-vous dans le menu principal et cliquez sur l'onglet **Pédagogie**.
+2. **Accéder à l'Appel** : Dans le panneau d'activités pédagogiques, sélectionnez le sous-onglet **Appel & Présences** (situé tout à droite avec l'icône de liste d'appel verte).
+3. **Fonctionnement de l'Appel** :
+   - Sélectionnez la **Date de l'Appel**, la **Classe** (ex : 4ème Des humanités) et l'**Option** (ex : Latin-Philo).
+   - Pour chaque élève présent dans la liste d'établissement, déterminez son statut en cliquant sur les boutons d'état : **P** (Présent), **A** (Absent) ou **R** (Retard).
+   - Saisissez si besoin des observations spécifiques (ex : *Excusé*, *Malade*).
+   - Visualisez instantanément les indicateurs statistiques (Total d'élèves, Nombre de Présents, Absents, Taux d'Assiduité de la classe).
+4. **Validation & Interopérabilité Directe** :
+   - Cliquez sur **"Valider & Sceller l'Appel du Jour"** pour verrouiller le registre.
+   - **Liaison Automatique avec les Bulletins** : Toute absence scellée et validée incrémente automatiquement le compteur de jours d'absence de l'élève sur son **Bulletin scolaire officiel** !
+5. **Sauvegarde et PDF** :
+   - Vous pouvez télécharger à tout moment la fiche d'appel certifiée au format **PDF** pour signature manuscrite ou l'archiver au format **JSON** pour l'inspection nationale.
 
 *Note : Fonctionnement en mode d'assistance locale de secours.*`;
   } else {

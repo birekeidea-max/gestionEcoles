@@ -41,7 +41,8 @@ Je suis votre **Assistant Guide Virtuel**. Mon rôle est de vous guider à trave
     { label: "📑 Certifier les bulletins", query: "Comment certifier les bulletins en PDF ?" },
     { label: "💳 Reçus financiers QR", query: "Comment enregistrer un paiement et imprimer/scanner un reçu QR ?" },
     { label: "📡 Mode hors-ligne USB", query: "Comment fonctionne le mode hors-ligne et l'échange USB ?" },
-    { label: "📚 Outils pédagogiques", query: "Comment utiliser la fiche de préparation et cotation pour les profs ?" }
+    { label: "📚 Outils pédagogiques", query: "Comment utiliser la fiche de préparation et cotation pour les profs ?" },
+    { label: "📝 Gérer les présences", query: "Comment faire l'appel et gérer les présences des élèves ?" }
   ];
 
   // Auto scroll to bottom
