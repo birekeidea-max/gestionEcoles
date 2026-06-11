@@ -138,7 +138,7 @@ export const StudentsPanel: React.FC<StudentsPanelProps> = ({
         // Convert canvas image data
         const url = combinedCanvas.toDataURL('image/png');
         const link = document.createElement('a');
-        link.download = `SGESC_CARTE_${showIdCard.fullName.toUpperCase().replace(/\s+/g, '_')}_${showIdCard.id}.png`;
+        link.download = `SyGEC_CARTE_${showIdCard.fullName.toUpperCase().replace(/\s+/g, '_')}_${showIdCard.id}.png`;
         link.href = url;
         link.click();
       }
@@ -816,7 +816,7 @@ export const StudentsPanel: React.FC<StudentsPanelProps> = ({
                     if (!showIdCard) return;
                     setIsDownloadingPdf(true);
                     try {
-                      await downloadStudentCardAsPDF('school-card-front', 'school-card-back', `SGESC_CARTE_${showIdCard.id.toUpperCase()}.pdf`);
+                      await downloadStudentCardAsPDF('school-card-front', 'school-card-back', `SyGEC_CARTE_${showIdCard.id.toUpperCase()}.pdf`);
                     } catch (err) {
                       console.error("PDF download failed:", err);
                     } finally {

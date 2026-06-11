@@ -315,7 +315,7 @@ export async function downloadStudentCardAsPDF(
     pdf.setFontSize(7);
     pdf.setFont('helvetica', 'italic');
     pdf.setTextColor(148, 163, 184);
-    pdf.text("Garantie de signature electronique SGESC RDC. Valide pour la session officielle.", 105, 205, { align: 'center' });
+    pdf.text("Garantie de signature electronique SyGEC RDC. Valide pour la session officielle.", 105, 205, { align: 'center' });
 
     pdf.save(filename.endsWith('.pdf') ? filename : `${filename}.pdf`);
     return true;

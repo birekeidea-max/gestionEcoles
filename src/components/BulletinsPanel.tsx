@@ -303,6 +303,8 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
   const [manualStudentName, setManualStudentName] = useState('');
   const [manualStudentGender, setManualStudentGender] = useState<'M' | 'F'>('M');
   const [selectedStudentId, setSelectedStudentId] = useState('');
+  const [bulletinStatus, setBulletinStatus] = useState<'Brouillon' | 'Finalisé'>('Brouillon');
+  const [finalizeDialogFor, setFinalizeDialogFor] = useState<Bulletin | null>(null);
 
   // Course configuration states
   const [grades, setGrades] = useState<CourseGrade[]>([]);
@@ -390,6 +392,7 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
     setGrades([]);
     setConduct('Très Bonne');
     setDaysAbsent(0);
+    setBulletinStatus('Brouillon');
     setFormError('');
     setIsFormOpen(true);
     
@@ -435,9 +438,11 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
       setConduct(matchedBul.conduct);
       setDaysAbsent(matchedBul.daysAbsent);
       setGrades(matchedBul.grades);
-      setFormError('Un bulletin existe déjà pour cet élève. Le modifier écrasera les modifications.');
+      setBulletinStatus(matchedBul.status || 'Brouillon');
+      setFormError('Un bulletin existe déjà pour cet élève. Vous pouvez modifier ses détails.');
     } else {
       setFormError('');
+      setBulletinStatus('Brouillon');
       loadGradesTemplate(studentObj.option);
     }
   };
@@ -545,12 +550,12 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
     const cleanedGrades: CourseGrade[] = grades.map(g => ({
       courseName: g.courseName,
       maxPoints: g.maxPoints,
-      obtainedFirstPeriod: Number(g.obtainedFirstPeriod) || 0,
-      obtainedSecondPeriod: Number(g.obtainedSecondPeriod) || 0,
-      obtainedExamFirstSemester: Number(g.obtainedExamFirstSemester) || 0,
-      obtainedThirdPeriod: Number(g.obtainedThirdPeriod) || 0,
-      obtainedFourthPeriod: Number(g.obtainedFourthPeriod) || 0,
-      obtainedExamSecondSemester: Number(g.obtainedExamSecondSemester) || 0,
+      obtainedFirstPeriod: Math.min(g.maxPoints, Math.max(0, Number(g.obtainedFirstPeriod) || 0)),
+      obtainedSecondPeriod: Math.min(g.maxPoints, Math.max(0, Number(g.obtainedSecondPeriod) || 0)),
+      obtainedExamFirstSemester: Math.min(g.maxPoints, Math.max(0, Number(g.obtainedExamFirstSemester) || 0)),
+      obtainedThirdPeriod: Math.min(g.maxPoints, Math.max(0, Number(g.obtainedThirdPeriod) || 0)),
+      obtainedFourthPeriod: Math.min(g.maxPoints, Math.max(0, Number(g.obtainedFourthPeriod) || 0)),
+      obtainedExamSecondSemester: Math.min(g.maxPoints, Math.max(0, Number(g.obtainedExamSecondSemester) || 0)),
     }));
 
     const preparedBulletin: Bulletin = {
@@ -562,7 +567,8 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
       academicYear: '2025-2026',
       grades: cleanedGrades,
       conduct,
-      daysAbsent
+      daysAbsent,
+      status: bulletinStatus
     };
 
     // Append to virtual students database if manually typed to prevent lookup crash
@@ -631,7 +637,7 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
         <text x="110" y="550" font-size="12" font-weight="bold" fill="#718096">Statut de l'Archive :</text>
         <text x="270" y="550" font-size="12" font-weight="900" fill="#10B981">ARCHIVÉ AUTOMATIQUEMENT</text>
         
-        <text x="300" y="690" font-size="11" font-weight="bold" fill="#94A3B8" text-anchor="middle">Portail SGESC RDC - Ministère de l'EPST</text>
+        <text x="300" y="690" font-size="11" font-weight="bold" fill="#94A3B8" text-anchor="middle">Portail SyGEC RDC - Ministère de l'EPST</text>
         <text x="300" y="710" font-size="9" fill="#94A3B8" text-anchor="middle">Empreinte de validation : ${preparedBulletin.id.slice(-8).toUpperCase()}</text>
       </svg>`;
 
@@ -655,7 +661,7 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
       }
 
       // DIRECT HARDWARE STORAGE DOWNLOAD AS PDF (PDF ONLY POLICY)
-      const pdfName = `SGESC_BULLETIN_${studName.toUpperCase().replace(/\s+/g, '_')}_${preparedBulletin.id.slice(-4)}.pdf`;
+      const pdfName = `SyGEC_BULLETIN_${studName.toUpperCase().replace(/\s+/g, '_')}_${preparedBulletin.id.slice(-4)}.pdf`;
       await downloadImageAsPDF(dataUrl, pdfName);
       
       showInstantAlert(`Sceau d'Archivage Généré ! Le bulletin de ${studName} a été automatiquement enregistré dans l'application et téléchargé au format PDF sécurisé dans le gestionnaire de fichiers de votre appareil.`);
@@ -1297,7 +1303,7 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
 
                     <button
                       onClick={async () => {
-                        const pdfName = `SGESC_ARCHIVE_${file.studentName.toUpperCase().replace(/\s+/g, '_')}_${file.id}.pdf`;
+                        const pdfName = `SyGEC_ARCHIVE_${file.studentName.toUpperCase().replace(/\s+/g, '_')}_${file.id}.pdf`;
                         await downloadImageAsPDF(file.imageData, pdfName);
                         showInstantAlert("Téléchargement du document PDF réussi !");
                       }}
@@ -1505,6 +1511,42 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
                       onChange={(e) => setDaysAbsent(Number(e.target.value))}
                       className="w-full rounded-lg border border-slate-300 p-1 font-mono font-bold text-[11px]"
                     />
+                  </div>
+                </div>
+
+                {/* Status Selection: Brouillon de Travail vs Finalisé d'office */}
+                <div className="p-3 bg-amber-50/40 rounded-xl border border-amber-200/50 space-y-2 mt-2">
+                  <span className="block text-[10.5px] font-black text-amber-900 uppercase tracking-wider font-mono">
+                    📌 État d'avancement du Bulletin
+                  </span>
+                  <p className="text-[9px] text-slate-500 leading-tight">
+                    Marquez ce bulletin en tant que <b>Brouillon</b> si l'encodage est partiel ou incomplet, ou <b>Finalisé</b> s'il est prêt pour le scellement et le téléchargement des parents.
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setBulletinStatus('Brouillon')}
+                      className={`py-2 px-3 rounded-lg border font-extrabold flex items-center justify-center gap-1.5 transition-all text-[11px] ${
+                        bulletinStatus === 'Brouillon'
+                          ? 'bg-amber-600 border-amber-700 text-white shadow-xs'
+                          : 'bg-white border-slate-250 text-slate-705 hover:bg-slate-50'
+                      }`}
+                    >
+                      <span>📝</span>
+                      <span>Brouillon (En cours)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBulletinStatus('Finalisé')}
+                      className={`py-2 px-3 rounded-lg border font-extrabold flex items-center justify-center gap-1.5 transition-all text-[11px] ${
+                        bulletinStatus === 'Finalisé'
+                          ? 'bg-[#155724] border-[#0c3c17] text-white shadow-xs'
+                          : 'bg-white border-slate-255 text-slate-705 hover:bg-slate-50'
+                      }`}
+                    >
+                      <span>🔒</span>
+                      <span>Finalisé (Verrouillé)</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1716,6 +1758,33 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
                 </div>
               </div>
 
+              {/* Dynamic draft mode reminder banner */}
+              {(!activeBulletin.status || activeBulletin.status === 'Brouillon') && (
+                <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-xl p-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs shrink-0 shadow-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">⚠️</span>
+                    <div>
+                      <p className="font-extrabold font-mono text-[11px] text-amber-805 uppercase">Mode Brouillon de Travail</p>
+                      <p className="text-[10px] text-amber-700 leading-tight">
+                        Ce bulletin n'a pas encore été finalisé d'office. Il contient un filigrane de sécurité "BROUILLON".
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const u = { ...activeBulletin, status: 'Finalisé' as const };
+                      onUpdateBulletin(u);
+                      setActiveBulletin(u);
+                      showInstantAlert("Félicitations! Le bulletin est maintenant Finalisé d'office et scellé.");
+                    }}
+                    className="bg-amber-600 hover:bg-amber-750 text-white font-black px-3.5 py-1.5 rounded-lg shadow-sm transition-all text-[11px] cursor-pointer"
+                  >
+                    🔒 Finaliser Maintenant
+                  </button>
+                </div>
+              )}
+
               {/* Print Area core scroll */}
               <div 
                 id="school-bulletin-printable" 
@@ -1728,8 +1797,17 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
 
                   {/* Armoiries et Drapeau en fond filigrane - HAUTEMENT VISIBLE ET PROPRE */}
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 select-none">
-                    <CongoCoatOfArms className="w-[480px] h-[480px]" opacityClassName="opacity-[0.16]" />
+                    <CongoCoatOfArms className="w-[480px] h-[480px]" opacityClassName="opacity-[0.24]" />
                   </div>
+
+                  {/* Robust security diagonal watermark for draft bulletins */}
+                  {(!activeBulletin.status || activeBulletin.status === 'Brouillon') && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30 select-none overflow-hidden origin-center rotate-[-35deg]">
+                      <span className="text-[54px] md:text-[80px] font-black tracking-widest text-[#D32F2F] opacity-[0.09] uppercase font-mono border-8 border-[#D32F2F] px-8 py-3 rounded-3xl whitespace-nowrap">
+                        BROUILLON DE TRAVAIL
+                      </span>
+                    </div>
+                  )}
 
                   {/* RDC State Header */}
                   <div className="flex flex-col sm:flex-row justify-between items-center text-center sm:text-left border-b-2 border-blue-600 pb-5 gap-4 relative z-10 pt-2">
@@ -1750,7 +1828,7 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
 
                     <div className="text-center sm:text-right border-t sm:border-t-0 sm:border-l border-slate-200 pt-3 sm:pt-0 sm:pl-4">
                       <span className="text-[11px] uppercase font-mono tracking-widest text-[#D32F2F] font-black block">BULLETIN DE NOTES OFFICIEL</span>
-                      <span className="text-[9.5px] font-mono font-black bg-blue-50 text-blue-900 px-2.5 py-1 mt-1 inline-block rounded-lg border border-blue-150">Ref: SGESC-{activeBulletin.id}</span>
+                      <span className="text-[9.5px] font-mono font-black bg-blue-50 text-blue-900 px-2.5 py-1 mt-1 inline-block rounded-lg border border-blue-150">Ref: SyGEC-{activeBulletin.id}</span>
                       <p className="text-[10.5px] text-slate-705 mt-1 font-extrabold font-mono">Année Scolaire: {activeBulletin.academicYear}</p>
                     </div>
                   </div>
@@ -1894,7 +1972,7 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
                     <div>
                       <span className="font-bold block uppercase text-slate-550 text-[8px] font-mono mb-0.5">SÉCURITÉ ET ASSURANCES</span>
                       <p className="text-slate-550 text-[9px] leading-relaxed">Conformément aux protocoles nationaux RDC, l'identification du bulletin par signature en QR assure la sécurité infalsifiable.</p>
-                      <span className="text-emerald-700 font-bold block font-mono text-[9px] mt-1">ID-EMBLÈME: SGESC-{activeBulletin.studentId}</span>
+                      <span className="text-emerald-700 font-bold block font-mono text-[9px] mt-1">ID-EMBLÈME: SyGEC-{activeBulletin.studentId}</span>
                     </div>
                   </div>
 
@@ -1991,14 +2069,18 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
                     type="button"
                     onClick={async () => {
                       if (!activeBulletin) return;
-                      setIsDownloadingPdf(true);
-                      try {
-                        const filename = `SGESC_BULLETIN_${displayName.toUpperCase().replace(/\s+/g, '_')}_${activeBulletin.id.slice(-4)}.pdf`;
-                        await downloadElementAsPDF('school-bulletin-printable', filename);
-                      } catch (err) {
-                        console.error("PDF download failed:", err);
-                      } finally {
-                        setIsDownloadingPdf(false);
+                      if (!activeBulletin.status || activeBulletin.status === 'Brouillon') {
+                        setFinalizeDialogFor(activeBulletin);
+                      } else {
+                        setIsDownloadingPdf(true);
+                        try {
+                          const filename = `SyGEC_BULLETIN_${displayName.toUpperCase().replace(/\s+/g, '_')}_${activeBulletin.id.slice(-4)}.pdf`;
+                          await downloadElementAsPDF('school-bulletin-printable', filename);
+                        } catch (err) {
+                          console.error("PDF download failed:", err);
+                        } finally {
+                          setIsDownloadingPdf(false);
+                        }
                       }
                     }}
                     disabled={isDownloadingPdf}
@@ -2062,7 +2144,7 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
                 <button
                   type="button"
                   onClick={async () => {
-                    const pdfName = `SGESC_ARCHIVE_${selectedArchiveView.studentName.toUpperCase().replace(/\s+/g, '_')}_${selectedArchiveView.id}.pdf`;
+                    const pdfName = `SyGEC_ARCHIVE_${selectedArchiveView.studentName.toUpperCase().replace(/\s+/g, '_')}_${selectedArchiveView.id}.pdf`;
                     await downloadImageAsPDF(selectedArchiveView.imageData, pdfName);
                     showInstantAlert("Téléchargement du document PDF réussi !");
                   }}
@@ -2171,6 +2253,116 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
           </div>
         </div>
       )}
+
+      {/* MODAL PROMPT: Ask user to finalize or download as draft */}
+      {finalizeDialogFor && (() => {
+        const student = students.find(s => s.id === finalizeDialogFor.studentId);
+        const name = student ? student.fullName : 'Élève';
+        
+        return (
+          <div className="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center z-[120] p-4 animate-fade-in" id="finalize-confirm-modal">
+            <div className="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border-4 border-amber-500">
+              {/* Header */}
+              <div className="bg-amber-500 text-white p-4 flex justify-between items-center shrink-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">🤔</span>
+                  <h4 className="font-extrabold text-sm uppercase tracking-wider font-sans leading-none">
+                    Validation du Bulletin
+                  </h4>
+                </div>
+                <button 
+                  onClick={() => setFinalizeDialogFor(null)} 
+                  className="text-white hover:text-amber-100 bg-amber-600 hover:bg-amber-700 px-2.5 py-1 rounded-lg cursor-pointer font-bold text-xs"
+                >
+                  Fermer
+                </button>
+              </div>
+
+              {/* Body Content */}
+              <div className="p-5 space-y-4 text-slate-800 text-center">
+                <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto border-2 border-amber-300">
+                  <span className="text-3xl">📝</span>
+                </div>
+                <div className="space-y-1">
+                  <h5 className="font-extrabold text-slate-900 text-md uppercase">Avez-vous déjà fini ?</h5>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    Vous demandez le téléchargement du bulletin de : <br />
+                    <span className="font-extrabold text-blue-900 text-xs">{name.toUpperCase()}</span>
+                  </p>
+                </div>
+
+                <div className="text-[11.5px] leading-relaxed text-slate-650 bg-slate-50 p-3 rounded-2xl border border-slate-150 space-y-1 text-left">
+                  <p>
+                    🔒 <b>Finalisé</b> : Retire le filigrane "Brouillon" du bulletin, applique le scellement officiel et prépare le téléchargement officiel.
+                  </p>
+                  <p>
+                    ✏️ <b>Brouillon</b> : Conserve le bulletin modifiable, mais télécharge un PDF d'aperçu portant le marquage de sécurité "Brouillon".
+                  </p>
+                </div>
+
+                {/* Choices */}
+                <div className="space-y-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const updatedBul = { ...finalizeDialogFor, status: 'Finalisé' as const };
+                      onUpdateBulletin(updatedBul);
+                      setActiveBulletin(updatedBul); // Update viewed reference
+                      setFinalizeDialogFor(null);
+                      
+                      setIsDownloadingPdf(true);
+                      showInstantAlert("Génération du scellement finalisé...");
+                      try {
+                        const filename = `SyGEC_BULLETIN_${name.toUpperCase().replace(/\s+/g, '_')}_${updatedBul.id.slice(-4)}.pdf`;
+                        await downloadElementAsPDF('school-bulletin-printable', filename);
+                        showInstantAlert(`Scellement validé d'office ! Bulletin de ${name} téléchargé avec succès.`);
+                      } catch (err) {
+                        console.error("PDF download failed:", err);
+                      } finally {
+                        setIsDownloadingPdf(false);
+                      }
+                    }}
+                    className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1.5 shadow-md transition-all cursor-pointer font-sans"
+                  >
+                    <span>🔒</span>
+                    Oui ! Finaliser et Télécharger
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setFinalizeDialogFor(null);
+                      setIsDownloadingPdf(true);
+                      showInstantAlert("Génération de l'aperçu brouillon...");
+                      try {
+                        const filename = `SyGEC_BULLETIN_BROUILLON_${name.toUpperCase().replace(/\s+/g, '_')}_${finalizeDialogFor.id.slice(-4)}.pdf`;
+                        await downloadElementAsPDF('school-bulletin-printable', filename);
+                        showInstantAlert(`Aperçu Brouillon de ${name} téléchargé avec succès.`);
+                      } catch (err) {
+                        console.error("PDF download failed:", err);
+                      } finally {
+                        setIsDownloadingPdf(false);
+                      }
+                    }}
+                    className="w-full py-2.5 px-4 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer font-sans"
+                  >
+                    <span>📝</span>
+                    Télécharger comme Brouillon
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFinalizeDialogFor(null)}
+                    className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-650 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                  >
+                    Annuler
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };

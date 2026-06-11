@@ -12,10 +12,17 @@ export const SCHOOL_OPTIONS: { value: SchoolOption; label: string; description: 
   { value: 'Électricité', label: 'Option Industrielle (Électricité)', description: 'Électrotechnique, bobinage, automatisation et réseaux d’alimentation.' },
   { value: 'Menuiserie', label: 'Option Menuiserie et Ébénisterie', description: 'Travail du bois, conception de meubles, construction et coffrage.' },
   { value: 'Coupe-Couture', label: 'Option Coupe et Couture', description: 'Stylisme, couture industrielle, traçage de patrons et confection.' },
-  { value: 'Architecture', label: 'Option Architecture et Construction', description: 'Bâtiment et travaux publics, dessin technique et génie civil.' }
+  { value: 'Architecture', label: 'Option Architecture et Construction', description: 'Bâtiment et travaux publics, dessin technique et génie civil.' },
+  { value: 'Enseignement Général', label: 'Enseignement Général Primaire', description: 'Matières de base communes pour tous les élèves du cycle primaire.' }
 ];
 
 export const CLASS_LEVELS: SchoolClassLevel[] = [
+  '1ère Année Primaire',
+  '2ème Année Primaire',
+  '3ème Année Primaire',
+  '4ème Année Primaire',
+  '5ème Année Primaire',
+  '6ème Année Primaire',
   '7ème EB',
   '8ème EB',
   '1ère Des humanités',
@@ -169,6 +176,15 @@ export const COURSES_BY_OPTION: Record<SchoolOption, { name: string; maxPoints: 
     { name: 'Topographie & Métré', maxPoints: 20 },
     { name: 'Urbanisme & Législation immobilière', maxPoints: 20 },
     { name: 'Français Professionnel', maxPoints: 20 }
+  ],
+  'Enseignement Général': [
+    { name: 'Français (Lecture, Grammaire & Dictée)', maxPoints: 25 },
+    { name: 'Mathématiques (Calcul, Problèmes & Géométrie)', maxPoints: 25 },
+    { name: 'Sciences d’Éveil (Hygiène, Anatomie & Nature)', maxPoints: 20 },
+    { name: 'Histoire & Géographie de la RDC', maxPoints: 15 },
+    { name: 'Éducation Civique & Morale', maxPoints: 15 },
+    { name: 'Dessin & Travaux Manuels', maxPoints: 10 },
+    { name: 'Éducation Physique', maxPoints: 10 }
   ]
 };
 
@@ -186,7 +202,8 @@ export const INITIAL_SCHOOLS: School[] = [
     rectorName: 'Révérend Père Préfet Jean-Michel',
     isApproved: true,
     rectorEmail: 'jean.michel@boboto.cd',
-    rectorPhone: '+243 815 112 233'
+    rectorPhone: '+243 815 112 233',
+    schoolType: 'SECONDAIRE'
   },
   {
     id: 'sc-2',
@@ -198,7 +215,8 @@ export const INITIAL_SCHOOLS: School[] = [
     rectorName: 'Sœur Préfète Aimée Mbuyi',
     isApproved: true,
     rectorEmail: 'aimee.mbuyi@kabambare.com',
-    rectorPhone: '+243 994 482 110'
+    rectorPhone: '+243 994 482 110',
+    schoolType: 'SECONDAIRE'
   },
   {
     id: 'sc-3',
@@ -210,7 +228,8 @@ export const INITIAL_SCHOOLS: School[] = [
     rectorName: 'Monsieur le Préfet Pascal Mupende',
     isApproved: true,
     rectorEmail: 'pascal.mupende@instgoma.net',
-    rectorPhone: '+243 853 445 566'
+    rectorPhone: '+243 853 445 566',
+    schoolType: 'SECONDAIRE'
   },
   {
     id: 'sc-4',
@@ -222,7 +241,8 @@ export const INITIAL_SCHOOLS: School[] = [
     rectorName: 'Monseigneur l’Abbé Sylvain Nkulu',
     isApproved: true,
     rectorEmail: 'sylvain.nkulu@imara.cd',
-    rectorPhone: '+243 892 783 911'
+    rectorPhone: '+243 892 783 911',
+    schoolType: 'SECONDAIRE'
   },
   {
     id: 'sc-5',
@@ -234,7 +254,8 @@ export const INITIAL_SCHOOLS: School[] = [
     rectorName: 'Père Préfet Jean-Claude Baguma',
     isApproved: true,
     rectorEmail: 'jc.baguma@alfajiri.org',
-    rectorPhone: '+243 812 554 990'
+    rectorPhone: '+243 812 554 990',
+    schoolType: 'SECONDAIRE'
   },
   {
     id: 'sc-6',
@@ -246,7 +267,8 @@ export const INITIAL_SCHOOLS: School[] = [
     rectorName: 'Préfet Thaddée Lihamba',
     isApproved: false,
     rectorEmail: 'thaddee.lihamba@maele.org',
-    rectorPhone: '+243 991 223 344'
+    rectorPhone: '+243 991 223 344',
+    schoolType: 'SECONDAIRE'
   },
   {
     id: 'sc-7',
@@ -258,7 +280,21 @@ export const INITIAL_SCHOOLS: School[] = [
     rectorName: 'Mère Supérieure Hélène Ngalula',
     isApproved: true,
     rectorEmail: 'helene.ngalula@bosangani.cd',
-    rectorPhone: '+243 855 667 788'
+    rectorPhone: '+243 855 667 788',
+    schoolType: 'SECONDAIRE'
+  },
+  {
+    id: 'sc-8',
+    name: 'EP 1 Boboto (Primaire)',
+    province: 'Kinshasa',
+    city: 'Kinshasa',
+    commune: 'Gombe',
+    nationalCode: '10105555',
+    rectorName: 'Directeur Innocent Mukadi',
+    isApproved: true,
+    rectorEmail: 'innocent@bobotoprimaire.cd',
+    rectorPhone: '+243 812 777 888',
+    schoolType: 'PRIMAIRE'
   }
 ];
 
@@ -334,6 +370,42 @@ export const INITIAL_STUDENTS: Student[] = [
     schoolId: 'sc-2',
     guardianName: 'Anaclet Mwabilu',
     enrollmentDate: '2024-09-05'
+  },
+  {
+    id: 'EP-2026-0007',
+    fullName: 'Jérémie Kanda Kabongo',
+    gender: 'M',
+    birthDate: '2014-05-10',
+    address: 'Av. du 24 Novembre, Lingwala',
+    classLevel: '6ème Année Primaire',
+    option: 'Enseignement Général',
+    schoolId: 'sc-8',
+    guardianName: 'Jean Kanda',
+    enrollmentDate: '2020-09-01'
+  },
+  {
+    id: 'EP-2026-0008',
+    fullName: 'Dorcas Masengo Luya',
+    gender: 'F',
+    birthDate: '2015-11-20',
+    address: 'Cité Oasis, Bandalungwa',
+    classLevel: '6ème Année Primaire',
+    option: 'Enseignement Général',
+    schoolId: 'sc-8',
+    guardianName: 'Jacques Luya',
+    enrollmentDate: '2021-09-01'
+  },
+  {
+    id: 'EP-2026-0009',
+    fullName: 'Samuel Kabasele Nkongolo',
+    gender: 'M',
+    birthDate: '2016-03-15',
+    address: 'Av. Kabasele, Barumbu',
+    classLevel: '5ème Année Primaire',
+    option: 'Enseignement Général',
+    schoolId: 'sc-8',
+    guardianName: 'Albert Nkongolo',
+    enrollmentDate: '2022-09-01'
   }
 ];
 

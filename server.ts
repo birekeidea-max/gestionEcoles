@@ -11,7 +11,7 @@ function getLocalFallbackResponse(query: string): string {
   if (query.includes('bulletin') || query.includes('relevé') || query.includes('note') || query.includes('cot') || query.includes('cote')) {
     return `### 📑 Gestion et Impression des Bulletins Scolaires
 
-Sur SGESC-RDC, vous pouvez gérer les bulletins nationaux sécurisés :
+Sur SyGEC-RDC, vous pouvez gérer les bulletins nationaux sécurisés :
 1. **Accès** : Allez dans l'onglet **Bulletins** depuis le menu principal.
 2. **Saisie des Notes** : Saisissez les notes de chaque élève par matière et par trimestre. Les moyennes, totaux et pourcentages sont calculés **automatiquement**.
 3. **Certification** : Cliquez sur **"Certifier le Bulletin"**. Cette action appose un **Sceau National QR immuable** et les armoiries officielles de la RDC.
@@ -21,7 +21,7 @@ Sur SGESC-RDC, vous pouvez gérer les bulletins nationaux sécurisés :
   } else if (query.includes('paiement') || query.includes('recette' ) || query.includes('finance') || query.includes('minerval') || query.includes('reçu') || query.includes('frais')) {
     return `### 💳 Gestion Finale des Recettes et Paiements
 
-Le portail SGESC-RDC intègre un module de comptabilité scolaire sécurisé :
+Le portail SyGEC-RDC intègre un module de comptabilité scolaire sécurisé :
 1. **Enregistrement de Paiement** : Accédez à l'onglet **Paiements**. Cliquez sur le bouton vert **"Nouveau Versement"**.
 2. **Données** : Renseignez l'élève, la catégorie de frais (Frais d'inscription, Minerval, Frais d'examen), le montant et la banque émettrice. Un code de reçu unique et sécurisé (ex: \`REC-2026-X\`) est généré.
 3. **Reçu avec Sceau QR** : Visualisez et exportez le reçu de l'élève. Il comprend un **Code QR unique** qui permet sa vérification instantanée. 
@@ -50,7 +50,7 @@ Pour les territoires éloignés ou en cas de panne réseau :
   } else if (query.includes('pedagogie' ) || query.includes('enseignant') || query.includes('cours') || query.includes('classe') || query.includes('présence') || query.includes('presence') || query.includes('appel') || query.includes('fiche de prep')) {
     return `### 📚 Le Portail Pédagogique des Enseignants & Gestion des Présences (Appel)
 
-La plateforme SGESC-RDC intègre d'ores et déjà un **onglet complet pour la gestion quotidienne de l'Appel et des Présences des élèves** :
+La plateforme SyGEC-RDC intègre d'ores et déjà un **onglet complet pour la gestion quotidienne de l'Appel et des Présences des élèves** :
 
 1. **Où le trouver** : Rendez-vous dans le menu principal et cliquez sur l'onglet **Pédagogie**.
 2. **Accéder à l'Appel** : Dans le panneau d'activités pédagogiques, sélectionnez le sous-onglet **Appel & Présences** (situé tout à droite avec l'icône de liste d'appel verte).
@@ -67,7 +67,7 @@ La plateforme SGESC-RDC intègre d'ores et déjà un **onglet complet pour la ge
 
 *Note : Fonctionnement en mode d'assistance locale de secours.*`;
   } else {
-    return `### 🇨🇩 Bonjour ! Je suis l'Assistant Guide Officiel du SGESC-RDC.
+    return `### 🇨🇩 Bonjour ! Je suis l'Assistant Guide Officiel du SyGEC-RDC.
 
 Je suis là pour vous accompagner dans la prise en main de cette plateforme administrative et pédagogique. Voici les rubriques d'aide principales :
 
@@ -143,10 +143,10 @@ Je suis entièrement configuré pour vous guider sur toutes les autres questions
         },
       });
 
-      // Prepare system instruction introducing the SGESC RDC context, views and how to use them
-      const systemInstruction = `Vous êtes l'Assistant Guide Virtuel Officiel du SGESC-RDC (Système de Gestion de l'Enseignement Secondaire au Congo), mis en place par la Direction Nationale de l'EPST à Kinshasa. Votre rôle est d'accueillir chaleureusement les préfets, comptables, enseignants, et inspecteurs scolaires, et de les guider pas à pas dans l'utilisation de l'application.
+      // Prepare system instruction introducing the SyGEC RDC context, views and how to use them
+      const systemInstruction = `Vous êtes l'Assistant Guide Virtuel Officiel du SyGEC-RDC (Système de Gestion des Écoles du Congo), mis en place par la Direction Nationale de l'EPST à Kinshasa. Votre rôle est d'accueillir chaleureusement les préfets, directeurs, comptables, enseignants, et inspecteurs scolaires, et de les guider pas à pas dans l'utilisation de l'application.
 
-CONTEXTE ET FONCTIONNALITÉS DE LA PLATEFORME SGESC-RDC :
+CONTEXTE ET FONCTIONNALITÉS DE LA PLATEFORME SyGEC-RDC :
 1. ÉCOLES (Établissements) : Affiche la liste des écoles historiques partenaires (Collège Boboto, Lycée Kabambare, Institut de Goma, Collège Imara, Lycée Alfajiri, Collège Maele, Lycée Bosangani, etc.). Les utilisateurs peuvent basculer entre elles pour voir leurs registres.
 2. ÉLÈVES : Permet de gérer le matricule d'inscription. Vous pouvez inscrire un nouvel élève, mettre à jour son statut (Actif, Suspendu, Transféré, Diplômé) et d'imprimer une carte d'identité scolaire recto-verso officielle dotée d'un code QR pour vérifications.
 3. PAIEMENTS : Pour la gestion fiscale scolaire. On peut y consigner des versements (frais d'inscription, minerval, examen), imprimer des reçus administratifs officiels avec code QR immuable. Également équipé d'un Scanner QR par caméra pour auditer les reçus papier présentés.
@@ -251,7 +251,7 @@ CONSIGNES DE RÉPONSE ET SENS DE SERVICE :
 
   // PORT must be 3000 according to guidelines
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[SGESC-RDC FULLSTACK SERVER] running on http://localhost:${PORT}`);
+    console.log(`[SyGEC-RDC FULLSTACK SERVER] running on http://localhost:${PORT}`);
   });
 }
 

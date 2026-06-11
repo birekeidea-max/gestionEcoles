@@ -448,7 +448,7 @@ export default function App() {
             </span>
             <div>
               <div className="flex items-center gap-1.5 flex-wrap">
-                <h1 className="text-base font-black text-slate-900 leading-none">SGESC RDC</h1>
+                <h1 className="text-base font-black text-slate-900 leading-none">SyGEC RDC</h1>
                 <span className="text-[9px] bg-[#007FFF] text-white border border-[#007FFF] px-2 py-0.5 rounded font-mono font-bold uppercase tracking-wider">
                   STATUT CONFORME
                 </span>
@@ -1036,7 +1036,7 @@ export default function App() {
                     </div>
 
                     <p className="text-xs text-slate-500 leading-relaxed font-semibold">
-                      Chaque bulletin officiel de notes, carte scolaire numérique d'élèves ou reçu de versement monétaire d’écolage généré par notre plateforme SGESC possède un sceau cryptographique (QR Code) vérifiable par n'importe quel inspecteur ou parent d'élève.
+                      Chaque bulletin officiel de notes, carte scolaire numérique d'élèves ou reçu de versement monétaire d’écolage généré par notre plateforme SyGEC possède un sceau cryptographique (QR Code) vérifiable par n'importe quel inspecteur ou parent d'élève.
                     </p>
 
                     <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -1213,7 +1213,7 @@ export default function App() {
         initialCode={scanCode}
       />
 
-      {/* AI Assistant Guide for SGESC-RDC platform */}
+      {/* AI Assistant Guide for SyGEC-RDC platform */}
       <AIGuideAssistant />
 
     </div>

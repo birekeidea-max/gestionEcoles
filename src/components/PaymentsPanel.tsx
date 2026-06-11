@@ -7,6 +7,133 @@ import { CongoFlagIcon, CongoCoatOfArms } from './CongoTheme';
 import { Landmark, Search, PlusCircle, Check, DollarSign, Calendar, Eye, Bookmark, Printer, RefreshCw, X } from 'lucide-react';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 
+export const FEE_TYPES = [
+  "Minerval (Frais de Scolarité Montant de base)",
+  "Frais d'Édition du Bulletin Certifié",
+  "Frais d'Examen National (Mini-ENAFEP / TENASOSP)",
+  "Frais de Transport Scolaire",
+  "Contribution de Fonctionnement (Parents d'élèves)",
+  "Assurance Maladie & Accidents Scolaire",
+  "Achat de la Tenue & Écussons officiels",
+  "Frais de Bibliothèque & Travaux Pratiques Informatique"
+];
+
+export const PAYMENT_METHODS = [
+  "Caisse Physique de l'École (Espèces / Cash)",
+  "Guichet Banque - Equity BCDC (RDC)",
+  "Guichet Banque - Rawbank (RDC)",
+  "Guichet Banque - Trust Merchant Bank (TMB)",
+  "Portefeuille Mobile - M-Pesa (Vodacom)",
+  "Portefeuille Mobile - Airtel Money",
+  "Portefeuille Mobile - Orange Money",
+  "Portefeuille Mobile - AfriMoney"
+];
+
+export const SIGNATORIES = [
+  "IP-4221 (Comptable Principal d'Établissement)",
+  "IP-3023 (Préfet des Études / Directeur d'École)",
+  "IP-9988 (Secrétaire Comptable d'Établissement)",
+  "IP-1102 (Comptable Adjoint d'Établissement)",
+];
+
+export const frenchNumberToWords = (num: number, currency: 'USD' | 'CDF'): string => {
+  if (num === 0) return "zéro " + (currency === 'USD' ? "dollars américains" : "francs congolais");
+  
+  const units = ["", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf"];
+  const teens = ["dix", "onze", "douze", "treize", "quatorze", "quinze", "seize", "dix-sept", "dix-huit", "dix-neuf"];
+  const tens = ["", "dix", "vingt", "trente", "quarante", "cinquante", "soixante", "soixante-dix", "quatre-vingts", "quatre-vingt-dix"];
+  
+  const convertLessThanThousand = (n: number): string => {
+    if (n === 0) return "";
+    let res = "";
+    const hundreds = Math.floor(n / 100);
+    const rest = n % 100;
+    
+    if (hundreds > 0) {
+      if (hundreds === 1) {
+        res += "cent";
+      } else {
+        res += units[hundreds] + " cent";
+        if (rest === 0) res += "s";
+      }
+    }
+    
+    if (rest > 0) {
+      if (hundreds > 0) res += " ";
+      if (rest < 10) {
+        res += units[rest];
+      } else if (rest < 20) {
+        res += teens[rest - 10];
+      } else {
+        const tensDigit = Math.floor(rest / 10);
+        const unitsDigit = rest % 10;
+        
+        if (tensDigit === 7) {
+          res += "soixante";
+          if (unitsDigit === 1) {
+            res += " et onze";
+          } else {
+            res += "-" + teens[unitsDigit];
+          }
+        } else if (tensDigit === 9) {
+          res += "quatre-vingt";
+          res += "-" + teens[unitsDigit];
+        } else {
+          res += tens[tensDigit];
+          if (unitsDigit === 1) {
+            if (tensDigit === 8) {
+              res += " un";
+            } else {
+              res += " et un";
+            }
+          } else if (unitsDigit > 1) {
+            res += "-" + units[unitsDigit];
+          }
+        }
+      }
+    }
+    return res;
+  };
+
+  let result = "";
+  let temp = Math.floor(num);
+  
+  const millions = Math.floor(temp / 1000000);
+  temp %= 1000000;
+  
+  const thousands = Math.floor(temp / 1000);
+  temp %= 1000;
+  
+  if (millions > 0) {
+    result += convertLessThanThousand(millions) + " million";
+    if (millions > 1) result += "s";
+  }
+  
+  if (thousands > 0) {
+    if (result !== "") result += " ";
+    if (thousands === 1) {
+      result += "mille";
+    } else {
+      result += convertLessThanThousand(thousands) + " mille";
+    }
+  }
+  
+  if (temp > 0) {
+    if (result !== "") result += " ";
+    result += convertLessThanThousand(temp);
+  }
+
+  if (result) {
+    result = result.trim().charAt(0).toUpperCase() + result.trim().slice(1);
+  }
+
+  const currencyStr = currency === 'USD' 
+    ? (num > 1 ? "dollars américains" : "dollar américain") 
+    : (num > 1 ? "francs congolais" : "franc congolais");
+
+  return `${result} ${currencyStr}`;
+};
+
 interface PaymentsPanelProps {
   payments: Payment[];
   students: Student[];
@@ -45,6 +172,9 @@ export const PaymentsPanel: React.FC<PaymentsPanelProps> = ({
   const [currency, setCurrency] = useState<'USD' | 'CDF'>('USD');
   const [month, setMonth] = useState('Septembre');
   const [semester, setSemester] = useState<'1er Semestre' | '2ème Semestre'>('1er Semestre');
+  const [feeTypeInput, setFeeTypeInput] = useState("Minerval (Frais de Scolarité Montant de base)");
+  const [paymentMethodInput, setPaymentMethodInput] = useState("Caisse Physique de l'École (Espèces / Cash)");
+  const [approvedByInput, setApprovedByInput] = useState("IP-4221 (Comptable Principal d'Établissement)");
   const [formError, setFormError] = useState('');
 
   // Active school-specific data
@@ -95,7 +225,10 @@ export const PaymentsPanel: React.FC<PaymentsPanelProps> = ({
       month,
       semester,
       date: new Date().toISOString().split('T')[0],
-      referenceNumber: refNum
+      referenceNumber: refNum,
+      feeType: feeTypeInput,
+      paymentMethod: paymentMethodInput,
+      approvedBy: approvedByInput
     };
 
     onAddPayment(newPayment);
@@ -105,10 +238,13 @@ export const PaymentsPanel: React.FC<PaymentsPanelProps> = ({
 
     // Reset properties
     setStudentNameInput('');
-    setClassLevelInput('1ère Année');
+    setClassLevelInput('7ème EB');
     setOptionInput('Pédagogie');
     setAmount(15);
     setCurrency('USD');
+    setFeeTypeInput("Minerval (Frais de Scolarité Montant de base)");
+    setPaymentMethodInput("Caisse Physique de l'École (Espèces / Cash)");
+    setApprovedByInput("IP-4221 (Comptable Principal d'Établissement)");
   };
 
   // Find matching registered students for prefill suggestion
@@ -204,7 +340,7 @@ export const PaymentsPanel: React.FC<PaymentsPanelProps> = ({
       el.style.height = originalHeight;
 
       const dataUrl = canvas.toDataURL('image/png');
-      const filename = `SGESC_RECU_${activeReceipt.id.toUpperCase()}_IMAGE.png`;
+      const filename = `SyGEC_RECU_${activeReceipt.id.toUpperCase()}_IMAGE.png`;
 
       const link = document.createElement('a');
       link.download = filename;
@@ -227,7 +363,7 @@ export const PaymentsPanel: React.FC<PaymentsPanelProps> = ({
       const timer = setTimeout(async () => {
         setIsDownloadingPdf(true);
         try {
-          const pdfName = `SGESC_RECU_${activeReceipt.id.toUpperCase()}.pdf`;
+          const pdfName = `SyGEC_RECU_${activeReceipt.id.toUpperCase()}.pdf`;
           await downloadElementAsPDF('school-receipt-printable', pdfName);
           showInstantAlert("Reçu officiel PDF généré et téléchargé automatiquement avec succès !");
         } catch (err) {
@@ -707,6 +843,57 @@ export const PaymentsPanel: React.FC<PaymentsPanelProps> = ({
                 )}
               </div>
 
+              {/* Nature des Frais (Fee Type) */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-650 uppercase mb-1 font-sans">
+                  Nature des Frais Académiques *
+                </label>
+                <select
+                  required
+                  value={feeTypeInput}
+                  onChange={(e) => setFeeTypeInput(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 p-2 text-xs bg-white font-bold text-slate-800 focus:ring-1 focus:ring-emerald-500"
+                >
+                  {FEE_TYPES.map(ft => (
+                    <option key={ft} value={ft}>{ft}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Canal de Paiement (Payment Method) */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-655 uppercase mb-1 font-sans">
+                  Canal / Mode de paiement *
+                </label>
+                <select
+                  required
+                  value={paymentMethodInput}
+                  onChange={(e) => setPaymentMethodInput(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 p-2 text-xs bg-[#fbfdfb] font-bold text-slate-800 focus:ring-1 focus:ring-emerald-500"
+                >
+                  {PAYMENT_METHODS.map(pm => (
+                    <option key={pm} value={pm}>{pm}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Signataire Validateur (Approved By) */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-655 uppercase mb-1 font-sans">
+                  Agent de Recouvrement (Validateur) *
+                </label>
+                <select
+                  required
+                  value={approvedByInput}
+                  onChange={(e) => setApprovedByInput(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 p-2 text-xs bg-white font-bold text-slate-800 focus:ring-1 focus:ring-emerald-500"
+                >
+                  {SIGNATORIES.map(sg => (
+                    <option key={sg} value={sg}>{sg}</option>
+                  ))}
+                </select>
+              </div>
+
               <div className="flex gap-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
@@ -748,73 +935,117 @@ export const PaymentsPanel: React.FC<PaymentsPanelProps> = ({
             )}
 
             {/* Printable official layout */}
-            <div id="school-receipt-printable" className="p-6 bg-[#fffbeb] border-2 border-dashed border-amber-300 rounded-xl space-y-4 relative overflow-hidden">
+            <div id="school-receipt-printable" className="p-7 bg-[#FAF9F5] border-t-8 border-t-[#F4D03F] border-b-8 border-b-[#F4D03F] border-l-8 border-l-[#007FFF] border-r-8 border-r-[#D32F2F] rounded-2xl space-y-5 relative overflow-hidden transition-all shadow-xl">
               
-              {/* Back watermark */}
+              {/* Central watermark of RDC Coat of Arms */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 select-none">
-                <CongoCoatOfArms className="w-56 h-56" opacityClassName="opacity-[0.15]" />
+                <CongoCoatOfArms className="w-64 h-64" opacityClassName="opacity-[0.24]" />
               </div>
 
-              {/* Header block */}
-              <div className="flex justify-between items-start gap-3">
-                <div className="flex items-center gap-2.5">
-                  <CongoCoatOfArms className="w-12 h-12 shrink-0 animate-in fade-in zoom-in-95 duration-200" opacityClassName="opacity-100" />
+              {/* Header block with RDC Flag, Motto, and School Info */}
+              <div className="flex flex-col sm:flex-row justify-between items-start gap-4 border-b pb-4 border-slate-200 relative z-20">
+                <div className="flex items-start gap-3">
+                  <div className="bg-white p-1 rounded-xl shadow-xs border border-slate-100 shrink-0">
+                    <CongoCoatOfArms className="w-14 h-14 shrink-0" opacityClassName="opacity-100" />
+                  </div>
                   <div className="space-y-1">
                     <div className="flex items-center gap-1.5">
-                      <CongoFlagIcon className="w-7 h-4 rounded-xs border border-slate-100" />
-                      <span className="text-[10px] font-black uppercase text-slate-800">RÉPUBLIQUE DÉMOCRATIQUE DU CONGO</span>
+                      <CongoFlagIcon className="w-6 h-3.5 rounded-xs border border-slate-100 shadow-3xs" />
+                      <span className="text-[9px] font-black uppercase text-slate-800 tracking-wider">RÉPUBLIQUE DÉMOCRATIQUE DU CONGO</span>
                     </div>
-                    <h4 className="text-[13px] font-black uppercase text-blue-700">{currentSchool.name}</h4>
-                    <p className="text-[8px] text-slate-500 font-mono">
-                      Province: {currentSchool.province} &bull; Ville: {currentSchool.city} &bull; Code: {currentSchool.nationalCode}
+                    <p className="text-[7.5px] uppercase font-extrabold text-blue-800 leading-none">
+                      MINISTÈRE DE L'ENSEIGNEMENT PRIMAIRE, SECONDAIRE ET TECHNIQUE (EPST)
+                    </p>
+                    <p className="text-[7.5px] text-slate-500 italic font-medium leading-none">
+                      Motto: "Justice - Paix - Travail"
+                    </p>
+                    <h4 className="text-[13px] font-black uppercase text-blue-700 font-sans tracking-tight pt-0.5">{currentSchool.name}</h4>
+                    <p className="text-[8px] text-slate-500 font-mono font-semibold">
+                      Province Prov.: {currentSchool.province} &bull; Ville: {currentSchool.city} &bull; Code Étab.: {currentSchool.nationalCode}
                     </p>
                   </div>
                 </div>
                 
-                <div className="text-right">
-                  <span className="text-[8px] font-mono tracking-widest text-slate-400 block uppercase">REÇU DE CAISSE SCOLAIRE</span>
-                  <span className="font-mono text-xs font-black text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-100 inline-block">{activeReceipt.id}</span>
+                <div className="text-left sm:text-right shrink-0">
+                  <span className="text-[7.5px] font-bold font-mono tracking-widest text-[#D32F2F] block uppercase bg-red-50 px-2 py-0.5 rounded border border-red-100 mb-1">
+                    REÇU SÉCURISÉ COLLÉGIAL
+                  </span>
+                  <span className="font-mono text-xs font-black text-rose-700 bg-rose-50/80 px-2.5 py-1 rounded-lg border border-rose-200 inline-block shadow-3xs">
+                    {activeReceipt.id}
+                  </span>
+                  <span className="text-[7px] text-slate-400 block font-mono mt-0.5 mt-1 block">RDC/EPST2526_REF</span>
                 </div>
               </div>
 
-              <div className="border-t-2 border-slate-200 py-3 grid grid-cols-2 gap-y-3 gap-x-6 text-xs text-slate-700">
-                <div className="col-span-2 sm:col-span-1">
-                  <span className="text-[9px] text-slate-400 uppercase font-mono block">Élève Bénéficiaire</span>
-                  <span className="text-sm font-extrabold text-slate-900 block">{activeReceipt.studentName}</span>
-                  <span className="text-[9px] text-slate-400 font-mono">Matricule: {activeReceipt.studentId}</span>
-                </div>
-
-                <div className="col-span-2 sm:col-span-1">
-                  <span className="text-[9px] text-slate-400 uppercase font-mono block">Affectation Pédagogique</span>
-                  <span className="font-semibold block">{activeReceipt.classLevel}</span>
-                  <span className="text-[9px] text-slate-550 bg-slate-100 p-0.5 rounded inline-block truncate max-w-[160px]" title={activeReceipt.option}>Option: {activeReceipt.option}</span>
+              {/* Main transaction particulars */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6 text-xs text-slate-700 border-b pb-4 border-slate-150 relative z-20">
+                
+                <div>
+                  <span className="text-[8.5px] text-slate-450 uppercase font-mono font-bold block tracking-wider">1. Bénéficiaire Académique</span>
+                  <span className="text-sm font-black text-slate-900 block pt-0.5">{activeReceipt.studentName}</span>
+                  <span className="text-[9px] text-slate-500 font-mono block">Identifiant Unique National: <strong className="font-extrabold">{activeReceipt.studentId}</strong></span>
                 </div>
 
                 <div>
-                  <span className="text-[9px] text-slate-400 uppercase font-mono block">Mois &amp; Semestre</span>
-                  <span className="font-semibold text-sky-800 bg-sky-50 px-1.5 py-0.5 rounded inline-block mt-0.5 border border-sky-100">{activeReceipt.month}</span>
-                  <span className="text-[9px] text-slate-400 block font-light font-mono italic">{activeReceipt.semester}</span>
-                </div>
-
-                <div>
-                  <span className="text-[9px] text-slate-400 uppercase font-mono block">Montant Intégral Versé</span>
-                  <span className="text-base font-black text-emerald-700 block font-mono">
-                    {activeReceipt.currency === 'USD' ? `$${activeReceipt.amount} USD` : `${activeReceipt.amount.toLocaleString('fr-CD')} CDF`}
+                  <span className="text-[8.5px] text-slate-450 uppercase font-mono font-bold block tracking-wider">2. Affectation / Option</span>
+                  <span className="font-extrabold text-slate-850 block pt-0.5">{activeReceipt.classLevel}</span>
+                  <span className="text-[9.5px] font-mono font-bold text-sky-850 bg-sky-50 border border-sky-100 rounded px-1.5 py-0.5 inline-block mt-0.5 shrink-1 truncate max-w-[210px]" title={activeReceipt.option}>
+                    Option Organized: {activeReceipt.option}
                   </span>
                 </div>
+
+                <div className="sm:border-t sm:pt-3">
+                  <span className="text-[8.5px] text-slate-450 uppercase font-mono font-bold block tracking-wider">3. Période &amp; Nature des Frais</span>
+                  <span className="font-bold text-sky-900 bg-blue-50 border border-blue-150 px-2 py-0.5 rounded text-[10px] font-mono inline-block mt-1">
+                    {activeReceipt.month} ({activeReceipt.semester})
+                  </span>
+                  <p className="text-[10px] font-black text-slate-800 mt-1">
+                    Objet: <span className="text-emerald-800">{activeReceipt.feeType || "Minerval (Frais de Scolarité)"}</span>
+                  </p>
+                </div>
+
+                <div className="sm:border-t sm:pt-3 flex flex-col justify-between">
+                  <div>
+                    <span className="text-[8.5px] text-slate-450 uppercase font-mono font-bold block tracking-wider">4. Montant Intégral Perçu</span>
+                    <span className="text-lg font-black text-emerald-700 block font-mono leading-none pt-1">
+                      {activeReceipt.currency === 'USD' ? `$${activeReceipt.amount} USD` : `${activeReceipt.amount.toLocaleString('fr-CD')} CDF`}
+                    </span>
+                  </div>
+                </div>
+
+                {/* French text speller of physical funds */}
+                <div className="col-span-2 bg-[#F1EFE9] border border-slate-200 rounded-xl p-3 space-y-1">
+                  <span className="text-[8px] uppercase tracking-wider font-mono font-extrabold text-slate-500 block">
+                    Arrêté la somme de (en toutes lettres) :
+                  </span>
+                  <p className="text-[11px] font-bold text-slate-800 italic pr-2 leading-relaxed">
+                    &ldquo; {frenchNumberToWords(activeReceipt.amount, activeReceipt.currency)} &rdquo;
+                  </p>
+                </div>
+
+                {/* Payment channel specifics */}
+                <div className="col-span-2 bg-white/70 border border-slate-200/60 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                  <div>
+                    <span className="text-[8px] uppercase tracking-wider font-mono font-extrabold text-slate-500 block">Mode / Réseau financier :</span>
+                    <span className="text-xs font-extrabold text-indigo-950 block pt-0.5">📂 {activeReceipt.paymentMethod || "Caisse Physique de l'École (Espèces / Cash)"}</span>
+                  </div>
+                  <div className="text-[10px] bg-indigo-50 text-indigo-900 border border-indigo-150 px-2.5 py-1 rounded-lg font-mono">
+                    Statut: <strong className="text-indigo-700 uppercase">ACQUITTÉ / SÛR</strong>
+                  </div>
+                </div>
+
               </div>
 
-              {/* Audit reference and Security signature */}
-              <div className="flex flex-col sm:flex-row items-center justify-between border-t-2 border-slate-100 pt-3 gap-3">
-                <div className="flex items-center gap-3">
+              {/* Audit reference, security and authentic stamp stamp */}
+              <div className="flex flex-col sm:flex-row items-center justify-between border-t border-slate-200 pt-4 gap-4 relative z-20">
+                <div className="flex items-center gap-3 w-full sm:w-auto">
                   {/* Real procedural verification QR layout */}
                   <div
                     onClick={() => onOpenQRScanner(activeReceipt.id)}
-                    className="p-1.5 bg-white border-2 border-slate-350 rounded-lg shadow-sm cursor-pointer hover:bg-slate-50 flex flex-col items-center gap-1 shrink-0"
-                    title="Cliquer pour scanner ce code"
+                    className="p-1.5 bg-white border-2 border-slate-300 rounded-xl shadow-sm cursor-pointer hover:bg-slate-100 flex flex-col items-center gap-1 shrink-0 group transition-all"
+                    title="Cliquer pour vérifier ce reçu de paiement"
                   >
                     <svg viewBox="0 0 100 100" className="w-14 h-14 text-slate-900" fill="currentColor">
-                      {/* Anchor points representing QR layout */}
                       <rect x="0" y="0" width="30" height="30" />
                       <rect x="6" y="6" width="18" height="18" fill="white" />
                       <rect x="10" y="10" width="10" height="10" />
@@ -827,7 +1058,6 @@ export const PaymentsPanel: React.FC<PaymentsPanelProps> = ({
                       <rect x="6" y="76" width="18" height="18" fill="white" />
                       <rect x="10" y="80" width="10" height="10" />
 
-                      {/* Random data blocks inside safe space */}
                       <rect x="40" y="10" width="12" height="12" />
                       <rect x="45" y="30" width="8" height="15" />
                       <rect x="20" y="45" width="15" height="10" />
@@ -836,21 +1066,39 @@ export const PaymentsPanel: React.FC<PaymentsPanelProps> = ({
                       <rect x="45" y="75" width="15" height="12" />
                       <polygon points="55,55 68,55 60,68" />
                     </svg>
-                    <span className="text-[5px] text-blue-700 font-bold font-mono tracking-widest leading-none">VÉRIFIER QR</span>
+                    <span className="text-[5.5px] text-blue-700 font-extrabold font-mono tracking-wider leading-none group-hover:text-amber-600 transition-colors">TESTER SECURITY QR</span>
                   </div>
 
-                  <div>
-                    <span className="text-[9px] text-slate-400 block font-mono">CODE DE SÉCURITÉ ANTI-FRAUDE</span>
-                    <span className="text-[10px] font-mono font-bold block text-slate-800">{activeReceipt.referenceNumber}</span>
-                    <span className="text-[9px] text-[#D32F2F] font-semibold block">Sceau de l’Inspecteur Régional RDC</span>
+                  <div className="space-y-1">
+                    <span className="text-[8px] text-slate-400 block font-mono leading-none">SIGNATURE CONFORMITÉ ANTI-FRAUDE</span>
+                    <span className="text-[10px] font-mono font-black block text-indigo-950">{activeReceipt.referenceNumber}</span>
+                    <span className="text-[8px] text-[#D32F2F] font-extrabold uppercase block tracking-wider">
+                      Sceau Numérique National Direction SECOPE
+                    </span>
                   </div>
                 </div>
 
-                <div className="text-center sm:text-right text-[10px] space-y-1">
-                  <span className="text-slate-500 block">Date de validation: {new Date(activeReceipt.date).toLocaleDateString('fr-CD')}</span>
-                  <span className="text-slate-400 font-mono block">Signature Comptable: IP-4221</span>
-                  <div className="h-6 flex items-center justify-end font-extrabold text-[12px] tracking-tight font-serif italic text-emerald-800 pr-2">
-                     Acquitté
+                {/* Sub-provincial official circular blue seal & mock signature */}
+                <div className="flex items-center gap-4">
+                  {/* Dynamic Blue Double Ring Stamp */}
+                  <div className="relative w-24 h-24 rounded-full border-4 border-double border-blue-600/75 flex flex-col items-center justify-center text-center p-1.5 font-sans rotate-6 bg-blue-50/20 select-none shrink-0" style={{ transform: 'rotate(-4deg)' }}>
+                    <div className="absolute inset-0.5 rounded-full border border-dashed border-blue-500/60"></div>
+                    <span className="text-[5px] font-extrabold text-blue-800 uppercase tracking-tight leading-none leading-none">EPST PROV.*</span>
+                    <span className="text-[8px] font-black text-blue-900 uppercase tracking-widest leading-none my-0.5">ACQUITTE</span>
+                    <span className="text-[5.5px] font-extrabold text-indigo-950 uppercase leading-none">{currentSchool.city ? currentSchool.city.substring(0, 10).toUpperCase() : "KINSHASA"}</span>
+                    <span className="text-[5px] font-bold text-slate-500 font-mono tracking-tight mt-1">N° {activeReceipt.referenceNumber.substring(4, 9)}</span>
+                  </div>
+
+                  <div className="text-right text-[10px] space-y-1 min-w-[150px]">
+                    <span className="text-slate-500 font-medium block">Date: {new Date(activeReceipt.date).toLocaleDateString('fr-CD')} à 12:00</span>
+                    <span className="text-slate-500 block font-mono text-[9px]">Signataire: <strong className="font-extrabold text-slate-800">{activeReceipt.approvedBy || "Comptable d'Établissement"}</strong></span>
+                    
+                    {/* Simulated hand stamp signature graphic */}
+                    <div className="pt-1.5 h-8 flex items-center justify-end">
+                      <span className="font-serif italic text-xs font-black tracking-tight text-emerald-800 border bg-emerald-50/50 border-emerald-150 px-2 py-0.5 rounded-md transform -rotate-1 shadow-2xs">
+                        {activeReceipt.approvedBy ? activeReceipt.approvedBy.split(' ')[0] : "Acquitté"}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -919,7 +1167,7 @@ export const PaymentsPanel: React.FC<PaymentsPanelProps> = ({
                   setIsDownloadingPdf(true);
                   showInstantAlert("Génération du document PDF officiel... Veuillez patienter.");
                   try {
-                    await downloadElementAsPDF('school-receipt-printable', `SGESC_RECU_${activeReceipt.id.toUpperCase()}.pdf`);
+                    await downloadElementAsPDF('school-receipt-printable', `SyGEC_RECU_${activeReceipt.id.toUpperCase()}.pdf`);
                     showInstantAlert("Document PDF téléchargé avec succès !");
                   } catch (err) {
                     console.error("PDF download failed:", err);

@@ -73,7 +73,7 @@ export function OfflineSyncHub({
     
     const d = new Date();
     const dateFormatted = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    downloadAnchor.setAttribute("download", `SGESC-RDC-Sauvegarde-${dateFormatted}.json`);
+    downloadAnchor.setAttribute("download", `SyGEC-RDC-Sauvegarde-${dateFormatted}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
@@ -176,7 +176,7 @@ export function OfflineSyncHub({
           <div className="flex-1">
             <p className="font-extrabold text-[10.5px] uppercase tracking-wide text-emerald-950">Liaison Nationale Active et Fluide</p>
             <p className="text-slate-500 text-[10px] font-sans">
-              Vos bases de données locales sont parfaitement synchronisées avec le cluster ministériel du SGESC-RDC.
+              Vos bases de données locales sont parfaitement synchronisées avec le cluster ministériel du SyGEC-RDC.
             </p>
           </div>
           <button

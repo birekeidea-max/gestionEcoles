@@ -1,6 +1,6 @@
 {
-  "name": "SGESC - Gestion Écoles RDC",
-  "description": "Plateforme numérique moderne pour la gestion complète des écoles secondaires en RDC (élèves, inscriptions, bulletins officiels, paiements avec reçus QR, fiches pédagogiques, cartes d'élèves, etc.).",
+  "name": "SyGEC - Gestion Écoles RDC",
+  "description": "Plateforme numérique moderne pour la gestion complète des écoles primaires et secondaires en RDC (élèves, inscriptions, bulletins officiels, paiements avec reçus QR, fiches pédagogiques, cartes d'élèves, etc.).",
   "requestFramePermissions": ["camera"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

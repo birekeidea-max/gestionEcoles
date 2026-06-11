@@ -37,9 +37,22 @@ export type SchoolOption =
   | 'Électricité'
   | 'Menuiserie'
   | 'Coupe-Couture'
-  | 'Architecture';
+  | 'Architecture'
+  | 'Enseignement Général';
 
-export type SchoolClassLevel = '7ème EB' | '8ème EB' | '1ère Des humanités' | '2ème Des humanités' | '3ème Des humanités' | '4ème Des humanités';
+export type SchoolClassLevel = 
+  | '1ère Année Primaire' 
+  | '2ème Année Primaire' 
+  | '3ème Année Primaire' 
+  | '4ème Année Primaire' 
+  | '5ème Année Primaire' 
+  | '6ème Année Primaire'
+  | '7ème EB' 
+  | '8ème EB' 
+  | '1ère Des humanités' 
+  | '2ème Des humanités' 
+  | '3ème Des humanités' 
+  | '4ème Des humanités';
 
 export interface School {
   id: string;
@@ -48,12 +61,13 @@ export interface School {
   city: string;
   commune: string;
   nationalCode: string; // Official RDC educational establishment code (e.g. "01014292")
-  rectorName: string; // Préfet des études
+  rectorName: string; // Préfet des études ou Directeur d'école
   isApproved?: boolean; // Ministerial approval status
   rectorPhone?: string; // Contact phone of the registering Préfet
   rectorEmail?: string; // Contact email
   rectorPassword?: string; // Account password
   optionsOrganized?: SchoolOption[]; // Sections or pedagogical options organized by the school
+  schoolType?: 'PRIMAIRE' | 'SECONDAIRE'; // Primary vs Secondary school
 }
 
 export interface Student {
@@ -83,6 +97,10 @@ export interface Payment {
   semester: '1er Semestre' | '2ème Semestre';
   date: string;
   referenceNumber: string; // Unique token for QR verification
+  feeType?: string; // e.g. "Minerval (Frais de Scolarité)", "Frais d'Examen", etc.
+  paymentMethod?: string; // e.g. "Caisse Physique", "Banque (Equity BCDC)", etc.
+  bankName?: string;
+  approvedBy?: string; // Name or role of the national accounting authority who validated the trade
 }
 
 export interface CourseGrade {
@@ -106,6 +124,7 @@ export interface Bulletin {
   grades: CourseGrade[];
   conduct: 'Excellente' | 'Très Bonne' | 'Bonne' | 'Assez Bonne' | 'Médiocre';
   daysAbsent: number;
+  status?: 'brouillon' | 'valide'; // Encodage brouillon vs validé
 }
 
 export interface CotationSheet {

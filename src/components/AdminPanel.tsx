@@ -140,7 +140,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     };
     triggerDownload(
       JSON.stringify(backup, null, 2),
-      `SGESC_RDC_SAUVEGARDE_SYSTEME_${new Date().toISOString().slice(0,10)}.json`,
+      `SyGEC_RDC_SAUVEGARDE_SYSTEME_${new Date().toISOString().slice(0,10)}.json`,
       'application/json;charset=utf-8;'
     );
   };
@@ -256,7 +256,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     schools.forEach(s => {
       csv += `"${s.id}","${s.name.replace(/"/g, '""')}","${s.province}","${s.city}","${s.commune}","${s.nationalCode}","${s.rectorName.replace(/"/g, '""')}","${s.isApproved !== false ? 'OUI' : 'NON'}"\n`;
     });
-    triggerDownload(csv, 'SGESC_RDC_REPERTOIRE_ECOLES.csv', 'text/csv;charset=utf-8;');
+    triggerDownload(csv, 'SyGEC_RDC_REPERTOIRE_ECOLES.csv', 'text/csv;charset=utf-8;');
   };
 
   const handleExportStudentsCSV = () => {
@@ -265,7 +265,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     students.forEach(s => {
       csv += `"${s.id}","${s.fullName.replace(/"/g, '""')}","${s.classLevel}","${s.option}","${s.gender}","${s.schoolId}"\n`;
     });
-    triggerDownload(csv, 'SGESC_RDC_LISTE_ELEVES.csv', 'text/csv;charset=utf-8;');
+    triggerDownload(csv, 'SyGEC_RDC_LISTE_ELEVES.csv', 'text/csv;charset=utf-8;');
   };
 
   const handleExportPaymentsCSV = () => {
@@ -274,7 +274,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     payments.forEach(p => {
       csv += `"${p.id}","${p.studentId}","${p.studentName.replace(/"/g, '""')}",${p.amount},"${p.currency}","${p.type}","${p.status}","${p.date}"\n`;
     });
-    triggerDownload(csv, 'SGESC_RDC_RAPPORT_VERSEMENTS.csv', 'text/csv;charset=utf-8;');
+    triggerDownload(csv, 'SyGEC_RDC_RAPPORT_VERSEMENTS.csv', 'text/csv;charset=utf-8;');
   };
 
   const handleExportBulletinsCSV = () => {
@@ -283,7 +283,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     bulletins.forEach(b => {
       csv += `"${b.id}","${b.studentId}","${b.academicYear}","${b.conduct}",${b.daysAbsent}\n`;
     });
-    triggerDownload(csv, 'SGESC_RDC_EVALUATIONS_BULLETINS.csv', 'text/csv;charset=utf-8;');
+    triggerDownload(csv, 'SyGEC_RDC_EVALUATIONS_BULLETINS.csv', 'text/csv;charset=utf-8;');
   };
 
   // --- SAVE ACTIONS ---
@@ -622,7 +622,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 </p>
               </div>
               <span className="text-[10px] font-mono select-none uppercase font-black tracking-widest bg-emerald-100/60 text-emerald-800 px-3 py-1 rounded-md border border-emerald-200">
-                STATUT : CONFORME SGESC RDC
+                STATUT : CONFORME SyGEC RDC
               </span>
             </div>
           ) : (
@@ -1675,7 +1675,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           <div className="border-b border-slate-150 pb-4">
             <h4 className="font-black text-slate-800 text-sm flex items-center gap-2">
               <Award className="w-5 h-5 text-red-650" />
-              STATISTIQUES DE SYNTHÈSE SCOLAIRE NATIONAL SGESC RDC
+              STATISTIQUES DE SYNTHÈSE SCOLAIRE NATIONAL SyGEC RDC
             </h4>
             <span className="text-[10px] text-slate-400 uppercase font-mono mt-1 block">Rapport global consolidé par Division d'Antenne</span>
           </div>

@@ -25,9 +25,9 @@ export function AIGuideAssistant() {
       {
         id: 'welcome',
         role: 'assistant',
-        text: `### 🇨🇩 Bienvenue sur le SGESC-RDC !
+        text: `### 🇨🇩 Bienvenue sur le SyGEC-RDC !
 
-Je suis votre **Assistant Guide Virtuel**. Mon rôle est de vous guider à travers toutes les fonctionnalités administratives et pédagogiques de la plateforme nationale de l'enseignement secondaire.
+Je suis votre **Assistant Guide Virtuel**. Mon rôle est de vous guider à travers toutes les fonctionnalités administratives et pédagogiques de la plateforme nationale de l'enseignement primaire et secondaire (SyGEC-RDC).
 
 **Que souhaitez-vous faire aujourd'hui ?** Sélectionnez l'une des suggestions ci-dessous ou posez-moi directement votre question en bas.`
       }
@@ -254,7 +254,7 @@ Je suis votre **Assistant Guide Virtuel**. Mon rôle est de vous guider à trave
               </div>
               <div className="text-left">
                 <h3 className="text-xs font-black uppercase tracking-wider font-sans text-yellow-300 flex items-center gap-1.5">
-                  Guidance SGESC-RDC <Sparkles className="w-3.5 h-3.5 text-yellow-300 fill-yellow-300" />
+                  Guidance SyGEC-RDC <Sparkles className="w-3.5 h-3.5 text-yellow-300 fill-yellow-300" />
                 </h3>
                 <span className="text-[10px] text-slate-200 font-mono tracking-wide uppercase font-semibold">
                   Mascotte Virtuelle d'Accompagnement
@@ -365,7 +365,7 @@ Je suis votre **Assistant Guide Virtuel**. Mon rôle est de vous guider à trave
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Posez votre question sur le SGESC-RDC..."
+              placeholder="Posez votre question sur le SyGEC-RDC..."
               className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-xs font-semibold focus:outline-hidden focus:ring-2 focus:ring-[#007FFF] focus:bg-white text-slate-800 transition-all font-sans"
               disabled={isLoading}
             />

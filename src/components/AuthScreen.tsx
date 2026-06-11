@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { UserRole } from '../types';
+import { UserRole, SchoolOption } from '../types';
 import { SCHOOL_OPTIONS, INITIAL_SCHOOLS, PROVINCES_26 } from '../constants';
 import { CongoCoatOfArms, CongoFlagIcon } from './CongoTheme';
 import secSchoolHero from '../assets/images/sec_school_hero_1780578435655.png';
@@ -140,6 +140,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
   const [customSchoolNationalCode, setCustomSchoolNationalCode] = useState('');
 
   // New school registration form
+  const [newSchoolType, setNewSchoolType] = useState<'PRIMAIRE' | 'SECONDAIRE'>('SECONDAIRE');
   const [newSchoolName, setNewSchoolName] = useState('');
   const [newSchoolProvince, setNewSchoolProvince] = useState('Kinshasa');
   const [newSchoolCity, setNewSchoolCity] = useState('');
@@ -195,10 +196,14 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
       return;
     }
 
-    if (selectedOptions.length === 0) {
+    if (newSchoolType === 'SECONDAIRE' && selectedOptions.length === 0) {
       setFormError('Veuillez sélectionner au moins une option/section organisée par votre école.');
       return;
     }
+
+    const assignedOptions: SchoolOption[] = newSchoolType === 'PRIMAIRE' 
+      ? ['Enseignement Général'] 
+      : selectedOptions;
 
     const newSchoolObj = {
       id: `sc-custom-${Date.now()}`,
@@ -212,19 +217,23 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
       rectorPhone: newSchoolRectorPhone,
       rectorEmail: newSchoolRectorEmail,
       rectorPassword: newSchoolRectorPassword,
-      optionsOrganized: selectedOptions
+      optionsOrganized: assignedOptions,
+      schoolType: newSchoolType
     };
 
     onAddSchool(newSchoolObj);
     
     // Automatically login and redirect into the system
+    const calculatedRole: UserRole = newSchoolType === 'PRIMAIRE' ? 'Directeur' : 'Préfet des études';
+    const calculatedMatriculePrefix = newSchoolType === 'PRIMAIRE' ? 'DIR' : 'PREF';
+
     onLogin({
       fullName: newSchoolRector,
       phone: newSchoolRectorPhone,
-      role: 'Préfet des études',
+      role: calculatedRole,
       schoolId: newSchoolObj.id,
       email: newSchoolRectorEmail,
-      matricule: `PREF-${Math.floor(10000 + Math.random() * 90000)}`,
+      matricule: `${calculatedMatriculePrefix}-${Math.floor(10000 + Math.random() * 90000)}`,
       password: newSchoolRectorPassword
     });
 
@@ -306,7 +315,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
       );
 
       if (!matchedSchool) {
-        setFormError("⚠️ Votre école n'est pas répertoriée dans la base centrale. Prière de demander au chef d'établissement (Préfet) de créer/enregistrer l'espace école d'abord.");
+        setFormError("⚠️ Votre établissement n'est pas répertorié dans la base centrale SyGEC. Prière de demander au Directeur de l'école primaire ou au Préfet des études de l'école secondaire de créer/enregistrer d'abord l'Espace de votre établissement.");
         return;
       }
 
@@ -325,7 +334,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
       return;
     }
 
-    if (role === 'Inspecteur' || role === 'Coordinateur' || role === 'Directeur') {
+    if (role === 'Inspecteur' || role === 'Coordinateur') {
       if (!fullName.trim()) {
         setFormError('Veuillez indiquer votre nom complet d’autorité administrative.');
         return;
@@ -821,7 +830,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
             </div>
             <div className="border-t border-slate-200 pt-2.5 mt-2 text-slate-650 leading-relaxed space-y-1">
               <span className="font-black text-blue-700 block text-[11px]">🛡️ Notification de validation d’intégrité :</span>
-              <span className="block text-[11.5px] leading-relaxed">Conformément aux protocoles de sécurité SGESC, la création d'un espace d'apprentissage nécessite une homologation directe du Chef d'Antenne National habilité.</span>
+              <span className="block text-[11.5px] leading-relaxed">Conformément aux protocoles de sécurité SyGEC, la création d'un espace d'apprentissage nécessite une homologation directe du Chef d'Antenne National habilité.</span>
               <span className="block text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded border border-indigo-100 mt-2 text-center">🔐 Votre établissement sera accessible pour vous et vos enseignants dès validation de l'administrateur !</span>
             </div>
           </div>
@@ -869,10 +878,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
           </div>
 
           <h2 className="text-2xl font-black tracking-tight text-slate-800">
-            SGESC <span className="text-sky-600">RDC</span>
+            SyGEC <span className="text-sky-600">RDC</span>
           </h2>
           <p className="mt-1.5 text-xs text-slate-500 tracking-wider font-semibold uppercase">
-            Système de Gestion des Écoles Secondaires
+            Système de Gestion des Écoles du Congo
           </p>
           <p className="text-[10px] text-slate-400 font-mono mt-0.5">
             République Démocratique du Congo &bull; Plateforme Nationale Unifiée (26 Provinces)
@@ -1060,18 +1069,15 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
                         </div>
                       </div>
                     </div>
-                  ) : (role === 'Inspecteur' || role === 'Coordinateur' || role === 'Directeur') ? (
-                    /* INSPECTORS & COORDINATORS & DIRECTEURS */
+                  ) : (role === 'Inspecteur' || role === 'Coordinateur') ? (
+                    /* INSPECTORS & COORDINATORS */
                     <div className="space-y-4 p-4 bg-amber-50/50 border border-amber-200/60 rounded-2xl text-left">
                       <div className="flex items-center gap-1.5 text-amber-800 font-extrabold text-[12px] uppercase tracking-wide">
                         <span>🛡️ Espace Autorité d'Inspection de l'EPST</span>
                       </div>
 
                       <p className="text-[11px] leading-relaxed text-slate-700 bg-white p-2.5 rounded-xl border border-slate-200 font-medium">
-                        {role === 'Directeur' 
-                          ? "Le programme national de l'école primaire n'étant pas encore actif sur la plateforme, l'accès vous est fourni en mode visiteur simple du réseau."
-                          : "Vous devez renseigner votre matricule et l'axe de supervision de votre juridiction pour pouvoir auditer la plateforme scolaire."
-                        }
+                        Vous devez renseigner votre matricule et l'axe de supervision de votre juridiction pour pouvoir auditer la plateforme scolaire nationale.
                       </p>
 
                       <div>
@@ -1449,12 +1455,43 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
             </div>
 
             <div className="space-y-3.5 max-h-[45vh] overflow-y-auto px-1">
+              {/* Type d'Établissement Picker */}
+              <div className="p-3 bg-slate-100 rounded-xl border border-slate-200">
+                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Type de l'établissement d'enseignement *</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setNewSchoolType('PRIMAIRE')}
+                    className={`p-2 rounded-lg text-xs font-bold border transition-all text-center flex flex-col items-center justify-center ${
+                      newSchoolType === 'PRIMAIRE'
+                        ? 'bg-blue-600 border-blue-700 text-white shadow-xs'
+                        : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span className="text-base">🎒</span>
+                    <span>École Primaire</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewSchoolType('SECONDAIRE')}
+                    className={`p-2 rounded-lg text-xs font-bold border transition-all text-center flex flex-col items-center justify-center ${
+                      newSchoolType === 'SECONDAIRE'
+                        ? 'bg-blue-600 border-blue-700 text-white shadow-xs'
+                        : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span className="text-base">🎓</span>
+                    <span>École Secondaire</span>
+                  </button>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-[11px] font-bold text-slate-600 uppercase">Nom complet de l'établissement *</label>
                 <input
                   type="text"
                   required
-                  placeholder="Ex: Institut Saint Thomas"
+                  placeholder={newSchoolType === 'PRIMAIRE' ? "Ex: École Primaire 1 Gombe" : "Ex: Institut Saint Thomas"}
                   value={newSchoolName}
                   onChange={(e) => setNewSchoolName(e.target.value)}
                   className="w-full rounded-lg border border-slate-300 py-2 px-3 text-xs focus:ring-emerald-500 focus:ring-1"
@@ -1515,14 +1552,22 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
               </div>
 
               <div className="border-t border-slate-100 pt-3 mt-3 space-y-3">
-                <span className="text-xs font-black text-emerald-700 block uppercase tracking-wider">Identifiants Personnels du Préfet</span>
+                <span className="text-xs font-black text-emerald-700 block uppercase tracking-wider">
+                  {newSchoolType === 'PRIMAIRE' 
+                    ? "Identifiants Personnels du Directeur de l'École" 
+                    : "Identifiants Personnels du Préfet des études"}
+                </span>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-600 uppercase">Nom du Préfet des études *</label>
+                  <label className="block text-[11px] font-bold text-slate-600 uppercase">
+                    {newSchoolType === 'PRIMAIRE' 
+                      ? "Nom du Directeur d'École *" 
+                      : "Nom du Préfet des études *"}
+                  </label>
                   <input
                     type="text"
                     required
-                    placeholder="Ex: Monsieur l'Abbé Pierre Lwamba"
+                    placeholder={newSchoolType === 'PRIMAIRE' ? "Ex: Monsieur Pierre Kakongo" : "Ex: Monsieur l'Abbé Pierre Lwamba"}
                     value={newSchoolRector}
                     onChange={(e) => setNewSchoolRector(e.target.value)}
                     className="w-full rounded-lg border border-slate-300 py-2 px-3 text-xs focus:ring-emerald-500"
@@ -1531,7 +1576,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
 
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-600 uppercase">Téléphone du Préfet *</label>
+                    <label className="block text-[11px] font-bold text-slate-600 uppercase">
+                      Téléphone {newSchoolType === 'PRIMAIRE' ? "du Directeur" : "du Préfet"} *
+                    </label>
                     <input
                       type="tel"
                       required
@@ -1542,11 +1589,13 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-600 uppercase">Email Administratif *</label>
+                    <label className="block text-[11px] font-bold text-slate-600 uppercase">
+                      Email Administratif {newSchoolType === 'PRIMAIRE' ? "du Directeur" : "du Préfet"} *
+                    </label>
                     <input
                       type="email"
                       required
-                      placeholder="prefet@ecole.cd"
+                      placeholder={newSchoolType === 'PRIMAIRE' ? "directeur@ecole.cd" : "prefet@ecole.cd"}
                       value={newSchoolRectorEmail}
                       onChange={(e) => setNewSchoolRectorEmail(e.target.value)}
                       className="w-full rounded-lg border border-slate-300 py-2 px-3 text-xs font-mono"
@@ -1567,64 +1616,74 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ schools, onAddSchool, on
                 </div>
 
                 {/* Options/Sections organisées par l'école */}
-                <div className="border-t border-slate-100 pt-3">
-                  <span className="text-[11px] font-bold text-slate-700 block uppercase mb-1">
-                    Options / Sections organisées *
-                  </span>
-                  <p className="text-[9.5px] text-slate-450 block mb-2 leading-tight">
-                    Sélectionnez les filières organisées par votre école pour vous attribuer les documents pédagogiques appropriés.
-                  </p>
-                  
-                  <div className="grid grid-cols-2 gap-1 text-xs max-h-36 overflow-y-auto p-2 border border-slate-200 bg-slate-50/50 rounded-xl">
-                    {SCHOOL_OPTIONS.map((opt) => {
-                      const isChecked = selectedOptions.includes(opt.value);
-                      return (
-                        <label 
-                          key={opt.value} 
-                          className={`flex items-start gap-1 px-2 py-1.5 rounded-lg border transition-all cursor-pointer ${
-                            isChecked 
-                              ? 'bg-emerald-50/80 border-emerald-350 text-emerald-800' 
-                              : 'bg-white border-slate-205 text-slate-600 hover:bg-slate-50'
-                          }`}
-                        >
-                          <input 
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => {
-                              if (isChecked) {
-                                setSelectedOptions(prev => prev.filter(o => o !== opt.value));
-                              } else {
-                                setSelectedOptions(prev => [...prev, opt.value]);
-                              }
-                            }}
-                            className="w-3.5 h-3.5 text-emerald-600 border-slate-300 rounded focus:ring-emerald-550 mt-0.5 shrink-0"
-                          />
-                          <div>
-                            <span className="font-extrabold block text-[10px] leading-tight">{opt.value}</span>
-                            <span className="text-[8px] opacity-75 block leading-none">{opt.label}</span>
-                          </div>
-                        </label>
-                      );
-                    })}
+                {newSchoolType === 'SECONDAIRE' ? (
+                  <div className="border-t border-slate-100 pt-3">
+                    <span className="text-[11px] font-bold text-slate-700 block uppercase mb-1">
+                      Options / Sections organisées *
+                    </span>
+                    <p className="text-[9.5px] text-slate-450 block mb-2 leading-tight">
+                      Sélectionnez les filières organisées par votre école pour vous attribuer les documents pédagogiques appropriés.
+                    </p>
+                    
+                    <div className="grid grid-cols-2 gap-1 text-xs max-h-36 overflow-y-auto p-2 border border-slate-200 bg-slate-50/50 rounded-xl">
+                      {SCHOOL_OPTIONS.filter(o => o.value !== 'Enseignement Général').map((opt) => {
+                        const isChecked = selectedOptions.includes(opt.value);
+                        return (
+                          <label 
+                            key={opt.value} 
+                            className={`flex items-start gap-1 px-2 py-1.5 rounded-lg border transition-all cursor-pointer ${
+                              isChecked 
+                                ? 'bg-emerald-50/80 border-emerald-350 text-emerald-800' 
+                                : 'bg-white border-slate-205 text-slate-600 hover:bg-slate-50'
+                            }`}
+                          >
+                            <input 
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => {
+                                if (isChecked) {
+                                  setSelectedOptions(prev => prev.filter(o => o !== opt.value));
+                                } else {
+                                  setSelectedOptions(prev => [...prev, opt.value]);
+                                }
+                              }}
+                              className="w-3.5 h-3.5 text-emerald-600 border-slate-300 rounded focus:ring-emerald-550 mt-0.5 shrink-0"
+                            />
+                            <div>
+                              <span className="font-extrabold block text-[10px] leading-tight">{opt.value}</span>
+                              <span className="text-[8px] opacity-75 block leading-none">{opt.label}</span>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    
+                    <div className="flex gap-2 mt-1.5 justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedOptions(SCHOOL_OPTIONS.filter(o => o.value !== 'Enseignement Général').map(o => o.value))}
+                        className="text-[9px] font-bold text-sky-600 bg-sky-50 px-2 py-0.5 rounded border border-sky-100 hover:bg-sky-100 transition-colors"
+                      >
+                        Tout cocher
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedOptions([])}
+                        className="text-[9px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 hover:bg-slate-200 transition-colors"
+                      >
+                        Désélectionner tout
+                      </button>
+                    </div>
                   </div>
-                  
-                  <div className="flex gap-2 mt-1.5 justify-end">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedOptions(SCHOOL_OPTIONS.map(o => o.value))}
-                      className="text-[9px] font-bold text-sky-600 bg-sky-50 px-2 py-0.5 rounded border border-sky-100 hover:bg-sky-100 transition-colors"
-                    >
-                      Tout cocher
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedOptions([])}
-                      className="text-[9px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 hover:bg-slate-200 transition-colors"
-                    >
-                      Désélectionner tout
-                    </button>
+                ) : (
+                  <div className="p-3 bg-blue-50/60 border border-blue-200 rounded-xl text-blue-900 flex items-start gap-1.5 mt-3">
+                    <span className="text-base">✨</span>
+                    <div className="text-left">
+                      <span className="font-extrabold block text-[10.5px] leading-tight uppercase font-mono text-blue-800">Canevas Pédagogique Primaire</span>
+                      <span className="text-[9.5px] font-medium leading-relaxed opacity-90 block">Une classe primaire en RDC organise le cycle de l'enseignement de base en tronc commun unique (<b>Enseignement Général</b>) sans option spécifique.</span>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
 

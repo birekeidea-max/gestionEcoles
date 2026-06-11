@@ -590,7 +590,7 @@ export const QRScannerMock: React.FC<{
                 
                 {verificationResult.isRealDatabaseMatch ? (
                   <span className="text-[8.5px] text-white font-mono bg-indigo-600 px-2 py-0.5 rounded-md font-bold uppercase tracking-wider">
-                    SGESC LIVE SECURE
+                    SyGEC LIVE SECURE
                   </span>
                 ) : (
                   <span className="text-[8.5px] text-slate-700 font-mono bg-slate-200 px-2 py-0.5 rounded-md font-bold uppercase tracking-wider">
