@@ -38,6 +38,7 @@ export type SchoolOption =
   | 'Menuiserie'
   | 'Coupe-Couture'
   | 'Architecture'
+  | 'Mécanique Générale'
   | 'Enseignement Général';
 
 export type SchoolClassLevel = 

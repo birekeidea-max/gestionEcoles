@@ -349,7 +349,11 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
         g.obtainedThirdPeriod + 
         g.obtainedFourthPeriod + 
         g.obtainedExamSecondSemester;
-      maxTotalAvailable += g.maxPoints * 6;
+      
+      const isPrat = g.courseName.toUpperCase().includes('PRAT. PROFESSIONNEL') || g.courseName.toUpperCase().includes('PRATIQUE');
+      const courseSem1Max = isPrat ? g.maxPoints * 2 : g.maxPoints * 4;
+      const courseSem2Max = isPrat ? g.maxPoints * 2 : g.maxPoints * 4;
+      maxTotalAvailable += (courseSem1Max + courseSem2Max);
     });
 
     const percentage = maxTotalAvailable > 0 ? (currentTotalObtained / maxTotalAvailable) * 100 : 0;
@@ -362,7 +366,11 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
       let maxTotal = 0;
       pb.grades.forEach(g => {
         obtained += g.obtainedFirstPeriod + g.obtainedSecondPeriod + g.obtainedExamFirstSemester + g.obtainedThirdPeriod + g.obtainedFourthPeriod + g.obtainedExamSecondSemester;
-        maxTotal += g.maxPoints * 6;
+        
+        const isPrat = g.courseName.toUpperCase().includes('PRAT. PROFESSIONNEL') || g.courseName.toUpperCase().includes('PRATIQUE');
+        const courseSem1Max = isPrat ? g.maxPoints * 2 : g.maxPoints * 4;
+        const courseSem2Max = isPrat ? g.maxPoints * 2 : g.maxPoints * 4;
+        maxTotal += (courseSem1Max + courseSem2Max);
       });
       return { studentId: pb.studentId, ratio: maxTotal > 0 ? obtained / maxTotal : 0 };
     });
@@ -1733,6 +1741,66 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
         const metrics = getBulletinMetrics(activeBulletin);
         const schoolObj = schools.find(s => s.id === activeBulletin.schoolId) || currentSchool;
 
+        const peerBulletins = bulletins.filter(bullet => bullet.schoolId === activeBulletin.schoolId && bullet.classLevel === activeBulletin.classLevel && bullet.option === activeBulletin.option);
+
+        // Grouping helper
+        const gradesGroupedByMax = activeBulletin.grades.reduce<Record<number, CourseGrade[]>>((acc, curr) => {
+          const m = curr.maxPoints;
+          if (!acc[m]) acc[m] = [];
+          acc[m].push(curr);
+          return acc;
+        }, {});
+
+        const sortedMaxGroups = Object.keys(gradesGroupedByMax)
+          .map(Number)
+          .sort((a, b) => a - b);
+
+        const getCourseSem1Max = (courseName: string, maxPoints: number) => {
+          const isPrat = courseName.toUpperCase().includes('PRAT. PROFESSIONNEL') || courseName.toUpperCase().includes('PRATIQUE');
+          return isPrat ? maxPoints * 2 : maxPoints * 4;
+        };
+        const getCourseSem2Max = (courseName: string, maxPoints: number) => {
+          const isPrat = courseName.toUpperCase().includes('PRAT. PROFESSIONNEL') || courseName.toUpperCase().includes('PRATIQUE');
+          return isPrat ? maxPoints * 2 : maxPoints * 4;
+        };
+        const getCourseExamMax = (courseName: string, maxPoints: number) => {
+          const isPrat = courseName.toUpperCase().includes('PRAT. PROFESSIONNEL') || courseName.toUpperCase().includes('PRATIQUE');
+          return isPrat ? 0 : maxPoints * 2;
+        };
+
+        const totMaxP1 = activeBulletin.grades.reduce((sum, g) => sum + g.maxPoints, 0);
+        const totMaxP2 = totMaxP1;
+        const totMaxEx1 = activeBulletin.grades.reduce((sum, g) => sum + getCourseExamMax(g.courseName, g.maxPoints), 0);
+        const totMaxSem1 = activeBulletin.grades.reduce((sum, g) => sum + getCourseSem1Max(g.courseName, g.maxPoints), 0);
+
+        const totMaxP3 = totMaxP1;
+        const totMaxP4 = totMaxP1;
+        const totMaxEx2 = totMaxEx1;
+        const totMaxSem2 = totMaxSem1;
+        const totMaxGeneral = totMaxSem1 + totMaxSem2;
+
+        const totObtP1 = activeBulletin.grades.reduce((sum, g) => sum + g.obtainedFirstPeriod, 0);
+        const totObtP2 = activeBulletin.grades.reduce((sum, g) => sum + g.obtainedSecondPeriod, 0);
+        const totObtEx1 = activeBulletin.grades.reduce((sum, g) => sum + g.obtainedExamFirstSemester, 0);
+        const totObtSem1 = activeBulletin.grades.reduce((sum, g) => sum + g.obtainedFirstPeriod + g.obtainedSecondPeriod + g.obtainedExamFirstSemester, 0);
+
+        const totObtP3 = activeBulletin.grades.reduce((sum, g) => sum + g.obtainedThirdPeriod, 0);
+        const totObtP4 = activeBulletin.grades.reduce((sum, g) => sum + g.obtainedFourthPeriod, 0);
+        const totObtEx2 = activeBulletin.grades.reduce((sum, g) => sum + g.obtainedExamSecondSemester, 0);
+        const totObtSem2 = activeBulletin.grades.reduce((sum, g) => sum + g.obtainedThirdPeriod + g.obtainedFourthPeriod + g.obtainedExamSecondSemester, 0);
+        const totObtGeneral = totObtSem1 + totObtSem2;
+
+        const percentP1 = totMaxP1 > 0 ? Number(((totObtP1 / totMaxP1) * 100).toFixed(1)) : 0;
+        const percentP2 = totMaxP2 > 0 ? Number(((totObtP2 / totMaxP2) * 100).toFixed(1)) : 0;
+        const percentEx1 = totMaxEx1 > 0 ? Number(((totObtEx1 / totMaxEx1) * 100).toFixed(1)) : 0;
+        const percentSem1 = totMaxSem1 > 0 ? Number(((totObtSem1 / totMaxSem1) * 100).toFixed(1)) : 0;
+
+        const percentP3 = totMaxP3 > 0 ? Number(((totObtP3 / totMaxP3) * 100).toFixed(1)) : 0;
+        const percentP4 = totMaxP4 > 0 ? Number(((totObtP4 / totMaxP4) * 100).toFixed(1)) : 0;
+        const percentEx2 = totMaxEx2 > 0 ? Number(((totObtEx2 / totMaxEx2) * 100).toFixed(1)) : 0;
+        const percentSem2 = totMaxSem2 > 0 ? Number(((totObtSem2 / totMaxSem2) * 100).toFixed(1)) : 0;
+        const percentGeneral = totMaxGeneral > 0 ? Number(((totObtGeneral / totMaxGeneral) * 100).toFixed(1)) : 0;
+
         return (
           <div className="fixed inset-0 bg-black/85 backdrop-blur-xs flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl max-w-4xl w-full p-6 space-y-6 shadow-2xl border border-slate-300 text-slate-800 flex flex-col h-[90vh]">
@@ -1788,213 +1856,418 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
               {/* Print Area core scroll */}
               <div 
                 id="school-bulletin-printable" 
-                className={`flex-1 overflow-y-auto transition-all ${theme.containerBg} ${theme.outerBorder} ${theme.layoutAddon} shadow-inner`}
+                className="flex-1 overflow-y-auto bg-white text-black border border-slate-400 font-sans relative shadow-inner p-1"
               >
-                <div className="relative w-full min-h-full p-4 md:p-8 space-y-6 flex flex-col justify-start">
+                <div className="relative w-full min-h-full p-4 md:p-6 space-y-4 flex flex-col justify-start bg-white border border-black">
                   
                   {/* Official RDC Tricolor Banner Line */}
-                  <div className="absolute top-0 inset-x-0 h-2 bg-gradient-to-r from-sky-400 via-yellow-400 to-red-500 z-20" />
+                  <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-sky-400 via-yellow-400 to-red-500 z-20" />
 
                   {/* Armoiries et Drapeau en fond filigrane - HAUTEMENT VISIBLE ET PROPRE */}
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 select-none">
-                    <CongoCoatOfArms className="w-[480px] h-[480px]" opacityClassName="opacity-[0.24]" />
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 select-none">
+                    <CongoCoatOfArms className="w-[450px] h-[450px]" opacityClassName="opacity-[0.55]" />
                   </div>
 
                   {/* Robust security diagonal watermark for draft bulletins */}
                   {(!activeBulletin.status || activeBulletin.status === 'Brouillon') && (
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30 select-none overflow-hidden origin-center rotate-[-35deg]">
-                      <span className="text-[54px] md:text-[80px] font-black tracking-widest text-[#D32F2F] opacity-[0.09] uppercase font-mono border-8 border-[#D32F2F] px-8 py-3 rounded-3xl whitespace-nowrap">
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30 select-none overflow-hidden origin-center rotate-[-30deg]">
+                      <span className="text-[50px] md:text-[68px] font-black tracking-widest text-[#D32F2F] opacity-[0.09] uppercase font-mono border-8 border-[#D32F2F] px-6 py-2 rounded-2xl whitespace-nowrap">
                         BROUILLON DE TRAVAIL
                       </span>
                     </div>
                   )}
 
                   {/* RDC State Header */}
-                  <div className="flex flex-col sm:flex-row justify-between items-center text-center sm:text-left border-b-2 border-blue-600 pb-5 gap-4 relative z-10 pt-2">
-                    <div className="flex flex-col sm:flex-row items-center gap-4">
-                      <CongoCoatOfArms className="w-20 h-20 shrink-0 drop-shadow-sm" opacityClassName="opacity-100" />
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-center sm:justify-start gap-1.5">
-                          <CongoFlagIcon className="w-8 h-5 rounded-xs shrink-0 shadow-xs" />
-                          <span className="text-[12px] font-black tracking-widest text-slate-900 font-sans uppercase">RÉPUBLIQUE DÉMOCRATIQUE DU CONGO</span>
-                        </div>
-                        <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-600 font-sans leading-tight">MINISTÈRE DE L’ÉDUCATION NATIONALE ET NOUVELLE CITOYENNETÉ &bull; EPST</h4>
-                        <p className={`text-[17px] font-black tracking-tight ${theme.primaryText} drop-shadow-3xs uppercase`}>{schoolObj.name}</p>
-                        <p className="text-[10px] text-slate-600 font-mono">
-                          PROVINCE SCOLAIRE: <span className="font-extrabold text-blue-900">{schoolObj.province.toUpperCase()}</span> &bull; CODE NATIONALE RDC: <span className="font-mono text-red-650 font-black">{schoolObj.nationalCode}</span>
-                        </p>
+                  <div className="border border-black p-2 bg-white relative z-10 space-y-2">
+                    <div className="flex justify-between items-center border-b border-black pb-2">
+                      {/* Left Side Flag */}
+                      <div className="w-16 h-10 border border-black flex items-center justify-center bg-sky-100 p-0.5 overflow-hidden shadow-xs">
+                        <CongoFlagIcon className="w-full h-full object-cover scale-105" />
+                      </div>
+
+                      {/* Center branding */}
+                      <div className="text-center px-4 space-y-0.5 flex-1">
+                        <h1 className="text-[11px] font-black tracking-widest font-sans">RÉPUBLIQUE DÉMOCRATIQUE DU CONGO</h1>
+                        <h2 className="text-[9px] font-extrabold font-sans text-slate-800 leading-tight uppercase font-black">MINISTÈRE DE L’ENSEIGNEMENT PRIMAIRE, SECONDAIRE ET TECHNIQUE</h2>
+                        <p className="text-[8px] font-bold text-slate-650 tracking-wider">SECRETARIAT GENERAL &bull; INSPECTION GENERALE DE L'EPST</p>
+                      </div>
+
+                      {/* Right Coat of Arms */}
+                      <div className="w-14 h-10 flex items-center justify-center">
+                        <CongoCoatOfArms className="w-10 h-10" opacityClassName="opacity-100" />
                       </div>
                     </div>
 
-                    <div className="text-center sm:text-right border-t sm:border-t-0 sm:border-l border-slate-200 pt-3 sm:pt-0 sm:pl-4">
-                      <span className="text-[11px] uppercase font-mono tracking-widest text-[#D32F2F] font-black block">BULLETIN DE NOTES OFFICIEL</span>
-                      <span className="text-[9.5px] font-mono font-black bg-blue-50 text-blue-900 px-2.5 py-1 mt-1 inline-block rounded-lg border border-blue-150">Ref: SyGEC-{activeBulletin.id}</span>
-                      <p className="text-[10.5px] text-slate-705 mt-1 font-extrabold font-mono">Année Scolaire: {activeBulletin.academicYear}</p>
+                    {/* Meta information of pupil - Grey Grid layout conforming to original photo watermarks */}
+                    <div className="grid grid-cols-12 border-t border-b border-black text-[9px] font-mono leading-relaxed divide-y divide-black bg-slate-50/70">
+                      {/* Row 1: ID */}
+                      <div className="col-span-12 p-1.5 flex items-center gap-2">
+                        <span className="font-bold uppercase tracking-wider text-slate-705">N° ID ÉLÈVE :</span>
+                        <span className="font-black text-[10px] tracking-widest text-[#D32F2F] bg-white px-2 py-0.5 border border-slate-300 font-mono">
+                          {activeBulletin.studentId.toUpperCase()}
+                        </span>
+                      </div>
+
+                      {/* Row 2: VILLE / ELEVE / SEXE */}
+                      <div className="col-span-12 grid grid-cols-12 divide-x divide-black">
+                        <div className="col-span-4 p-1.5 flex items-center gap-1">
+                          <span className="font-bold uppercase text-slate-755">VILLE :</span>
+                          <span className="font-extrabold text-black uppercase">{schoolObj.city ? schoolObj.city.toUpperCase() : 'BUKAVU'}</span>
+                        </div>
+                        <div className="col-span-6 p-1.5 flex items-center gap-1">
+                          <span className="font-bold uppercase text-slate-755">ÉLÈVE :</span>
+                          <span className="font-black text-black uppercase text-[10px]">{displayName.toUpperCase()}</span>
+                        </div>
+                        <div className="col-span-2 p-1.5 flex items-center justify-between">
+                          <span className="font-bold uppercase text-slate-755">SEXE :</span>
+                          <span className="font-black text-black">{genderText.charAt(0)}</span>
+                        </div>
+                      </div>
+
+                      {/* Row 3: COMMUNE / NE(E) A / LE */}
+                      <div className="col-span-12 grid grid-cols-12 divide-x divide-black">
+                        <div className="col-span-4 p-1.5 flex items-center gap-1">
+                          <span className="font-bold uppercase text-slate-755">COMMUNE :</span>
+                          <span className="font-extrabold text-black uppercase">{schoolObj.commune ? schoolObj.commune.toUpperCase() : 'IBANDA'}</span>
+                        </div>
+                        <div className="col-span-4 p-1.5 flex items-center gap-1">
+                          <span className="font-bold uppercase text-slate-755">NE(E) A :</span>
+                          <span className="font-extrabold text-black uppercase">{schoolObj.city ? schoolObj.city.toUpperCase() : 'BUKAVU'}</span>
+                        </div>
+                        <div className="col-span-4 p-1.5 flex items-center gap-1">
+                          <span className="font-bold uppercase text-slate-755">LE :</span>
+                          <span className="font-extrabold text-black">{student ? student.birthDate : '04/10/2005'}</span>
+                        </div>
+                      </div>
+
+                      {/* Row 4: ECOLE / CLASSE */}
+                      <div className="col-span-12 grid grid-cols-12 divide-x divide-black">
+                        <div className="col-span-6 p-1.5 flex items-center gap-1">
+                          <span className="font-bold uppercase text-slate-755">ÉCOLE :</span>
+                          <span className="font-black text-black uppercase">{schoolObj.name.toUpperCase()}</span>
+                        </div>
+                        <div className="col-span-6 p-1.5 flex items-center gap-1">
+                          <span className="font-bold uppercase text-slate-755">CLASSE-OPTION :</span>
+                          <span className="font-black text-black uppercase">{activeBulletin.classLevel.toUpperCase()} {activeBulletin.option.toUpperCase()}</span>
+                        </div>
+                      </div>
+
+                      {/* Row 5: CODE / N° PERM */}
+                      <div className="col-span-12 grid grid-cols-12 divide-x divide-black">
+                        <div className="col-span-6 p-1.5 flex items-center gap-1">
+                          <span className="font-bold uppercase text-slate-755">CODE NATIONAL :</span>
+                          <span className="font-black text-black font-mono">{schoolObj.nationalCode}</span>
+                        </div>
+                        <div className="col-span-6 p-1.5 flex items-center gap-1">
+                          <span className="font-bold uppercase text-slate-755">N° PERM :</span>
+                          <span className="font-black text-black text-[8.5px]">PERM-0{activeBulletin.id.slice(-4).toUpperCase()}</span>
+                        </div>
+                      </div>
+
+                      {/* Row 6: TITULAIRE / ID */}
+                      <div className="col-span-12 grid grid-cols-12 divide-x divide-black">
+                        <div className="col-span-8 p-1.5 flex items-center gap-1">
+                          <span className="font-bold uppercase text-slate-755">TITULAIRE :</span>
+                          <span className="font-extrabold text-black uppercase">TITULAIRE DE CLASSE / DG DESIGNÉ</span>
+                        </div>
+                        <div className="col-span-4 p-1.5 flex items-center gap-1">
+                          <span className="font-bold uppercase text-slate-755">ID TIT :</span>
+                          <span className="font-black text-slate-800 font-mono">T-SYGEC-{activeBulletin.id.slice(0, 5).toUpperCase()}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Center Bulletin Title band */}
+                    <div className="py-2 text-center bg-slate-900 text-white rounded-md mt-1">
+                      <h3 className="text-[10px] font-black uppercase tracking-widest text-yellow-300">
+                        BULLETIN DE NOTES OFFICIEL &bull; ANNEE SCOLAIRE {activeBulletin.academicYear}
+                      </h3>
                     </div>
                   </div>
 
-                  {/* Matricule information of pupils */}
-                  <div className="space-y-4 relative z-10">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs bg-white/70 backdrop-blur-xs p-4 rounded-xl border border-blue-200/80 shadow-xs relative overflow-hidden">
-                      <div className="absolute top-0 bottom-0 left-0 w-1.5 bg-blue-600" />
-                      <div>
-                        <span className="text-[9px] uppercase font-mono text-slate-400 block font-bold tracking-wider">Identité de l'apprenant</span>
-                        <span className="font-black text-blue-950 block text-base uppercase">{displayName}</span>
-                        <span className="text-[9.5px] text-slate-600 font-mono">Sexe: <span className="font-extrabold text-slate-900">{genderText}</span> &bull; Matricule: <span className="font-black text-blue-800">{activeBulletin.studentId}</span></span>
-                      </div>
-                      <div>
-                        <span className="text-[9px] uppercase font-mono text-slate-400 block font-bold tracking-wider">Niveau &bull; Section d'études</span>
-                        <span className={`text-[13px] block font-black text-slate-900 uppercase`}>{activeBulletin.classLevel}</span>
-                        <span className={`text-[10px] font-mono px-2.5 py-0.5 mt-1.5 inline-block rounded-md border font-black uppercase ${theme.badgeColor}`}>
-                          Option: {activeBulletin.option}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-[9px] uppercase font-mono text-slate-400 block font-bold tracking-wider">Évaluation de conduite / Présence</span>
-                        <span className="text-slate-900 font-extrabold block text-[13px] mt-0.5">Conduite: <span className="text-emerald-700 font-black">{activeBulletin.conduct}</span></span>
-                        <span className="text-[10px] text-slate-600 font-bold font-mono">Absence enregistrée: <span className="text-red-600 font-black">{activeBulletin.daysAbsent}</span> jours</span>
-                      </div>
-                    </div>
-
-                    {/* Official RDC Grades Table matrix */}
-                    <div className="overflow-x-auto bg-white/70 backdrop-blur-xs rounded-xl border border-blue-200 shadow-xs p-1">
-                    <table className="w-full text-[10px] text-left border-collapse border border-slate-300">
+                  {/* Official RDC Grades Table matrix conforming to original photo grouping */}
+                  <div className="overflow-x-auto border border-black relative z-10 bg-white/70">
+                    <table className="w-full text-[9px] text-left border-collapse border border-black">
                       <thead>
-                        <tr className={`border border-slate-400 divide-x divide-slate-300 font-black text-center ${theme.tableHeaderBg} ${theme.tableHeaderTextColor}`}>
-                          <th rowSpan={2} className="py-3.5 px-3 text-left w-64 border border-slate-300 uppercase tracking-wider font-extrabold text-blue-950">MATIÈRES ENSEIGNÉES EN SECONDAIRE</th>
-                          <th rowSpan={2} className="py-3.5 px-1 bg-slate-50 border border-slate-300 w-20 text-[9px] uppercase font-bold text-slate-700">MAX Période</th>
-                          <th colSpan={3} className="py-1.5 border border-slate-300 bg-sky-50 text-sky-950 uppercase tracking-widest text-[9px] font-black">1er SEMESTRE (Points Obtenus)</th>
-                          <th colSpan={3} className="py-1.5 border border-slate-300 bg-red-50/80 text-red-950 uppercase tracking-widest text-[9px] font-black">2ème SEMESTRE (Points Obtenus)</th>
-                          <th rowSpan={2} className="py-3.5 px-1 bg-gradient-to-br from-yellow-300 to-amber-300 text-slate-950 font-black border border-slate-350 text-[11px] w-28">TOTAL GÉNÉRAL</th>
+                        <tr className="border-b border-black divide-x divide-black font-black text-center bg-slate-100 text-black">
+                          <th rowSpan={2} className="py-2 px-2 text-left w-52 border-r border-black uppercase font-black text-blue-950">
+                            MATIÈRES ENSEIGNÉES
+                          </th>
+                          <th rowSpan={2} className="py-2 px-0.5 bg-slate-50 border-r border-black text-[8px] uppercase font-black text-slate-700 text-center">
+                            MAX PÉRIODE
+                          </th>
+                          <th colSpan={3} className="py-1 border-r border-black bg-sky-50 text-sky-950 uppercase tracking-wider text-[8px] font-black">
+                            1er SEMESTRE (Points Obtenus)
+                          </th>
+                          <th colSpan={3} className="py-1 border-r border-black bg-red-50 text-red-950 uppercase tracking-wider text-[8px] font-black">
+                            2ème SEMESTRE (Points Obtenus)
+                          </th>
+                          <th rowSpan={2} className="py-2 px-0.5 bg-amber-200 text-slate-950 font-black border-r border-black text-[9px] w-14">
+                            T.G.
+                          </th>
+                          <th colSpan={2} className="py-1 bg-slate-150 text-slate-805 uppercase tracking-tight text-[7.5px] font-bold">
+                            EXAM RÉPÊCHAGE
+                          </th>
                         </tr>
-                        <tr className="border border-slate-300 divide-x divide-slate-200 text-[8.5px] font-mono bg-slate-50/80">
-                          <th className="py-1 border border-slate-300 bg-sky-50/30">1ère P.</th>
-                          <th className="py-1 border border-slate-300 bg-sky-50/30">2ème P.</th>
-                          <th className="py-1 bg-blue-100/50 border border-slate-300 text-blue-905 font-black">EXAMEN 1</th>
-                          <th className="py-1 border border-slate-300 bg-red-50/20">3ème P.</th>
-                          <th className="py-1 border border-slate-300 bg-red-50/20">4ème P.</th>
-                          <th className="py-1 bg-red-100/50 border border-slate-300 text-red-905 font-black">EXAMEN 2</th>
+                        <tr className="border-b border-black divide-x divide-black text-[8px] font-mono bg-slate-105 text-center">
+                          <th className="py-1 bg-sky-50/40">1ère P.</th>
+                          <th className="py-1 bg-sky-50/40">2ème P.</th>
+                          <th className="py-1 bg-sky-100/60 font-black text-sky-900 border-r border-black">EXAM 1</th>
+                          <th className="py-1 bg-red-50/40">3ème P.</th>
+                          <th className="py-1 bg-red-50/40">4ème P.</th>
+                          <th className="py-1 bg-red-100/60 font-black text-rose-900 border-r border-black">EXAM 2</th>
+                          <th className="py-1 bg-slate-100 text-[7px] font-serif font-semibold">%</th>
+                          <th className="py-1 bg-slate-100 text-[6.5px] font-serif font-semibold">SIGN.</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-250 border border-slate-300 text-[10px]">
-                        {activeBulletin.grades.map((g, idx) => {
-                          const subtotal = 
-                            g.obtainedFirstPeriod + 
-                            g.obtainedSecondPeriod + 
-                            g.obtainedExamFirstSemester + 
-                            g.obtainedThirdPeriod + 
-                            g.obtainedFourthPeriod + 
-                            g.obtainedExamSecondSemester;
+                      <tbody className="divide-y divide-black">
+                        {sortedMaxGroups.map((maxVal) => {
+                          const courseList = gradesGroupedByMax[maxVal] || [];
                           
-                          const maxAll = g.maxPoints * 6;
-                          const isPassing = subtotal >= maxAll * 0.5;
-
                           return (
-                            <tr key={idx} className="hover:bg-slate-50/50 font-medium divide-x divide-slate-200 text-center text-[11.5px]">
-                              <td className="py-2.5 px-3 text-left font-sans font-black text-slate-850 border-r border-slate-300">{g.courseName}</td>
-                              <td className="py-2.5 px-1 font-mono font-bold text-slate-600 border-r border-slate-300 bg-slate-100/30">{g.maxPoints}</td>
-                              <td className="py-2.5 px-1 font-mono">{g.obtainedFirstPeriod}</td>
-                              <td className="py-2.5 px-1 font-mono">{g.obtainedSecondPeriod}</td>
-                              <td className="py-2.5 px-1 font-mono bg-blue-50/40 text-blue-900 font-extrabold">{g.obtainedExamFirstSemester}</td>
-                              <td className="py-2.5 px-1 font-mono">{g.obtainedThirdPeriod}</td>
-                              <td className="py-2.5 px-1 font-mono">{g.obtainedFourthPeriod}</td>
-                              <td className="py-2.5 px-1 font-mono bg-red-50/40 text-red-900 font-extrabold">{g.obtainedExamSecondSemester}</td>
-                              <td className={`py-2.5 px-1 font-mono font-black border-l border-slate-300 text-[12px] ${isPassing ? 'text-emerald-900 bg-emerald-50/45' : 'text-red-750 bg-red-50/45'}`}>
-                                {subtotal} <span className="text-[10px] text-slate-450 font-normal">/ {maxAll}</span>
-                              </td>
-                            </tr>
+                            <React.Fragment key={maxVal}>
+                              {/* Group divider showing MAXIMA row */}
+                              <tr className="bg-slate-205 font-black text-black divide-x divide-black text-center text-[8.5px] border-t-2 border-b-2 border-black">
+                                <td className="py-1 px-2 text-left uppercase tracking-widest font-black text-slate-800">
+                                  MAXIMA
+                                </td>
+                                <td className="py-1 font-mono font-bold">{maxVal}</td>
+                                <td className="py-1 font-mono font-bold">{maxVal}</td>
+                                <td className="py-1 font-mono bg-sky-100/50 text-sky-950">{getCourseExamMax('', maxVal) || ''}</td>
+                                <td className="py-1 font-mono bg-sky-200 text-sky-950 font-black">{getCourseSem1Max('', maxVal)}</td>
+                                <td className="py-1 font-mono font-bold">{maxVal}</td>
+                                <td className="py-1 font-mono font-bold">{maxVal}</td>
+                                <td className="py-1 font-mono bg-rose-100/50 text-rose-950">{getCourseExamMax('', maxVal) || ''}</td>
+                                <td className="py-1 font-mono bg-red-200 text-rose-950 font-black">{getCourseSem2Max('', maxVal)}</td>
+                                <td className="py-1 font-mono bg-yellow-200 text-slate-950 font-black">
+                                  {getCourseSem1Max('', maxVal) + getCourseSem2Max('', maxVal)}
+                                </td>
+                                <td colSpan={2} className="bg-slate-150"></td>
+                              </tr>
+
+                              {/* Courses belonging to this group */}
+                              {courseList.map((g, cIdx) => {
+                                const isPrat = g.courseName.toUpperCase().includes('PRAT. PROFESSIONNEL') || g.courseName.toUpperCase().includes('PRATIQUE');
+                                const sem1Total = g.obtainedFirstPeriod + g.obtainedSecondPeriod + g.obtainedExamFirstSemester;
+                                const sem1Max = isPrat ? g.maxPoints * 2 : g.maxPoints * 4;
+                                
+                                const sem2Total = g.obtainedThirdPeriod + g.obtainedFourthPeriod + g.obtainedExamSecondSemester;
+                                const sem2Max = isPrat ? g.maxPoints * 2 : g.maxPoints * 4;
+
+                                const tgTotal = sem1Total + sem2Total;
+                                const tgMax = sem1Max + sem2Max;
+                                const isPassing = tgTotal >= tgMax * 0.5;
+
+                                return (
+                                  <tr key={cIdx} className="hover:bg-slate-50 divide-x divide-black text-center text-[9px] text-slate-800">
+                                    <td className="py-1.5 px-2 text-left font-sans font-extrabold border-r border-black uppercase text-slate-950">
+                                      {g.courseName}
+                                    </td>
+                                    <td className="py-1.5 font-mono font-medium">{g.obtainedFirstPeriod}</td>
+                                    <td className="py-1.5 font-mono font-medium">{g.obtainedSecondPeriod}</td>
+                                    <td className={`py-1.5 font-mono font-bold ${isPrat ? 'bg-slate-200/50 text-slate-450' : 'bg-slate-50'}`}>
+                                      {isPrat ? '' : g.obtainedExamFirstSemester}
+                                    </td>
+                                    <td className="py-1.5 font-mono font-black bg-sky-50 text-sky-900">{sem1Total}</td>
+                                    <td className="py-1.5 font-mono font-medium">{g.obtainedThirdPeriod}</td>
+                                    <td className="py-1.5 font-mono font-medium">{g.obtainedFourthPeriod}</td>
+                                    <td className={`py-1.5 font-mono font-bold ${isPrat ? 'bg-slate-200/50 text-slate-450' : 'bg-slate-50'}`}>
+                                      {isPrat ? '' : g.obtainedExamSecondSemester}
+                                    </td>
+                                    <td className="py-1.5 font-mono font-black bg-rose-50/50 text-rose-900">{sem2Total}</td>
+                                    <td className={`py-1.5 font-mono font-black border-r border-black text-[9.5px] ${isPassing ? 'bg-emerald-50 text-emerald-950 font-bold' : 'bg-red-50 text-red-950 font-bold'}`}>
+                                      {tgTotal}
+                                    </td>
+                                    {/* Exam repechage blank placeholders */}
+                                    <td className="py-1.5 bg-slate-50"></td>
+                                    <td className="py-1.5 bg-slate-50"></td>
+                                  </tr>
+                                );
+                              })}
+                            </React.Fragment>
                           );
                         })}
 
-                        {/* Computed Metrics Block */}
-                        <tr className="bg-slate-100 font-black text-[11px] divide-x divide-slate-300 text-center border-t-2 border-slate-400">
-                          <td className="py-3 px-3 text-left uppercase font-black text-blue-950">TOTAL GÉNÉRAL DE LA CLASSE</td>
-                          <td className="py-3 px-1 font-mono text-slate-700 bg-slate-105">
-                            {activeBulletin.grades.reduce((sum, g) => sum + g.maxPoints, 0)}
+                        {/* Overall MAXIMA GENERAUX row */}
+                        <tr className="bg-slate-300 text-black font-black text-center text-[9.5px] border-t-2 border-b border-black divide-x divide-black">
+                          <td className="py-1.5 px-2 text-left uppercase font-black">MAXIMA GENERAUX</td>
+                          <td className="py-1.5 font-mono">{totMaxP1}</td>
+                          <td className="py-1.5 font-mono">{totMaxP2}</td>
+                          <td className="py-1.5 font-mono bg-sky-50">{totMaxEx1}</td>
+                          <td className="py-1.5 font-mono bg-sky-100 font-black">{totMaxSem1}</td>
+                          <td className="py-1.5 font-mono">{totMaxP3}</td>
+                          <td className="py-1.5 font-mono">{totMaxP4}</td>
+                          <td className="py-1.5 font-mono bg-red-50">{totMaxEx2}</td>
+                          <td className="py-1.5 font-mono bg-red-100 font-black">{totMaxSem2}</td>
+                          <td className="py-1.5 font-mono bg-yellow-300 text-slate-900 font-black text-[10px]">
+                            {totMaxGeneral}
                           </td>
-                          <td className="py-3 px-1 font-mono">{activeBulletin.grades.reduce((sum, g) => sum + g.obtainedFirstPeriod, 0)}</td>
-                          <td className="py-3 px-1 font-mono">{activeBulletin.grades.reduce((sum, g) => sum + g.obtainedSecondPeriod, 0)}</td>
-                          <td className="py-3 px-1 bg-blue-50/70 font-mono text-blue-900">{activeBulletin.grades.reduce((sum, g) => sum + g.obtainedExamFirstSemester, 0)}</td>
-                          <td className="py-3 px-1 font-mono">{activeBulletin.grades.reduce((sum, g) => sum + g.obtainedThirdPeriod, 0)}</td>
-                          <td className="py-3 px-1 font-mono">{activeBulletin.grades.reduce((sum, g) => sum + g.obtainedFourthPeriod, 0)}</td>
-                          <td className="py-3 px-1 bg-rose-50/70 font-mono text-rose-900">{activeBulletin.grades.reduce((sum, g) => sum + g.obtainedExamSecondSemester, 0)}</td>
-                          <td className="py-3 px-1 font-mono text-slate-900 bg-gradient-to-r from-amber-200 to-yellow-200 flex items-center justify-center font-black text-[13px] border-l border-slate-300">
-                            {metrics.obtained} <span className="text-[10px] text-slate-600 font-normal ml-1">/ {metrics.available}</span>
-                          </td>
+                          <td colSpan={2} className="bg-slate-150"></td>
                         </tr>
 
-                        {/* Percentages and Rankings row */}
-                        <tr className="bg-blue-950 text-white font-black text-center text-xs divide-x divide-slate-600">
-                          <td className="py-3.5 px-3 text-left uppercase text-yellow-405 tracking-wider">POURCENTAGE &amp; CLASSEMENT SCOLAIRE RDC</td>
-                          <td colSpan={2} className="py-3.5 px-1 font-mono tracking-wide text-yellow-300 text-lg bg-blue-900/45">
-                            {metrics.percentage}%
+                        {/* Overall TOTAUX OBTENUS row */}
+                        <tr className="bg-slate-205 text-black font-black text-center text-[10px] border-b border-black divide-x divide-black">
+                          <td className="py-1.5 px-2 text-left uppercase font-extrabold text-slate-800">TOTAUX OBTENUS</td>
+                          <td className="py-1.5 font-mono">{totObtP1}</td>
+                          <td className="py-1.5 font-mono">{totObtP2}</td>
+                          <td className="py-1.5 font-mono bg-slate-50">{totObtEx1}</td>
+                          <td className="py-1.5 font-mono bg-sky-50/80 font-black text-sky-950">{totObtSem1}</td>
+                          <td className="py-1.5 font-mono">{totObtP3}</td>
+                          <td className="py-1.5 font-mono">{totObtP4}</td>
+                          <td className="py-1.5 font-mono bg-slate-50">{totObtEx2}</td>
+                          <td className="py-1.5 font-mono bg-red-50/80 font-black text-red-950">{totObtSem2}</td>
+                          <td className="py-1.5 font-mono bg-amber-100 text-black font-black text-[11px] border-l border-black">
+                            {totObtGeneral}
                           </td>
-                          <td colSpan={3} className="py-3.5 px-1 font-sans text-[12px] font-extrabold uppercase">
-                            🏆 CLASSEMENT: {metrics.rankText}
+                          <td colSpan={2} className="bg-slate-250"></td>
+                        </tr>
+
+                        {/* COLUMN PERCENTAGES row */}
+                        <tr className="bg-blue-900 text-white font-black text-center text-[8.5px] border-b border-black divide-x divide-blue-800">
+                          <td className="py-1.5 px-2 text-left uppercase font-black text-yellow-300">POURCENTAGE SCOLAIRE</td>
+                          <td className="py-1.5 font-mono">{percentP1}%</td>
+                          <td className="py-1.5 font-mono">{percentP2}%</td>
+                          <td className="py-1.5 font-mono">{percentEx1}%</td>
+                          <td className="py-1.5 font-mono bg-blue-950 font-extrabold text-yellow-300 text-[10px]">{percentSem1}%</td>
+                          <td className="py-1.5 font-mono">{percentP3}%</td>
+                          <td className="py-1.5 font-mono">{percentP4}%</td>
+                          <td className="py-1.5 font-mono">{percentEx2}%</td>
+                          <td className="py-1.5 font-mono bg-rose-950 font-extrabold text-yellow-300 text-[10px]">{percentSem2}%</td>
+                          <td className="py-1.5 font-mono bg-yellow-405 text-blue-950 font-black text-[10px]">
+                            {percentGeneral}%
                           </td>
-                          <td colSpan={3} className="py-3.5 px-1 font-mono uppercase text-yellow-300 font-black text-[11px] bg-emerald-950/20">
-                            {metrics.percentage >= 50.0 ? '✅ ADMISSIBLE: PASSGE EN CLASSE SUPÉRIEURE' : '❌ REFUSÉ: DOUBLE DE CLASSE'}
-                          </td>
+                          <td colSpan={2} className="bg-blue-950 text-yellow-250 font-bold uppercase text-[7px] text-center">Rattrapage</td>
+                        </tr>
+
+                        {/* PLACE/NBRE ELEV row */}
+                        <tr className="bg-slate-50 text-black font-semibold text-center text-[9px] border-b border-black divide-x divide-black">
+                          <td className="py-1 px-2 text-left uppercase font-bold text-slate-700">PLACE/NBRE ELEV</td>
+                          <td colSpan={4} className="py-1 text-black font-bold text-left pl-2">PLACE: {metrics.rankText}</td>
+                          <td colSpan={4} className="py-1 text-black font-mono text-left pl-2">INSCRITS: {peerBulletins.length} élève(s)</td>
+                          <td className="py-1 bg-yellow-100 font-black text-[10px]">{metrics.rank}</td>
+                          <td colSpan={2} className="bg-slate-200"></td>
+                        </tr>
+
+                        {/* APPLICATION row */}
+                        <tr className="bg-white text-black font-semibold text-center text-[9px] border-b border-black divide-x divide-black">
+                          <td className="py-1 px-2 text-left uppercase font-bold text-slate-700">APPLICATION</td>
+                          <td colSpan={4} className="py-1 text-left pl-2 font-mono">ASSIDU AUTOMATIQUE</td>
+                          <td colSpan={4} className="py-1 text-left pl-2 font-mono">EXCELLENTE PERFORMANCE</td>
+                          <td className="py-1 font-bold">E</td>
+                          <td colSpan={2} className="bg-slate-200"></td>
+                        </tr>
+
+                        {/* CONDUITE row */}
+                        <tr className="bg-slate-50 text-black font-semibold text-center text-[9px] border-b border-black divide-x divide-black">
+                          <td className="py-1 px-2 text-left uppercase font-bold text-slate-700">CONDUITE</td>
+                          <td colSpan={4} className="py-1 text-left pl-2 font-bold text-emerald-800">{activeBulletin.conduct.toUpperCase()}</td>
+                          <td colSpan={4} className="py-1 text-left pl-2 text-red-700 font-mono">Absence Injustifiée: {activeBulletin.daysAbsent} jours</td>
+                          <td className="py-1 font-mono font-bold text-emerald-800">{activeBulletin.conduct === 'Très Bonne' ? 'TB' : 'B'}</td>
+                          <td colSpan={2} className="bg-slate-200"></td>
+                        </tr>
+
+                        {/* SIGNATURES RESPONSABLES row */}
+                        <tr className="bg-white text-black font-semibold text-center text-[9px] divide-x divide-black">
+                          <td className="py-1 px-2 text-left uppercase font-bold text-slate-700">SIGN. RESPONSABLE</td>
+                          <td colSpan={4} className="py-1 text-slate-400 italic">Signature oblig.</td>
+                          <td colSpan={4} className="py-1 text-slate-400 italic">Visé Nationalement</td>
+                          <td className="py-1"></td>
+                          <td colSpan={2} className="bg-slate-200"></td>
                         </tr>
                       </tbody>
                     </table>
                   </div>
-                </div>
 
-                {/* Signatures block */}
-                <div className="pt-4 grid grid-cols-1 md:grid-cols-3 gap-6 text-[10px] border-t-2 border-slate-300 align-top leading-normal relative z-10 bg-white/70 p-4 rounded-xl mt-4">
-                  <div className="flex gap-2.5 items-start">
-                    <div
-                      onClick={() => onOpenQRScanner(activeBulletin.id)}
-                      className="p-1 px-1.5 bg-white border border-slate-350 rounded shadow-2xs cursor-pointer hover:bg-slate-50 shrink-0 text-center"
-                      title="Cliquer pour vérifier ce QR Code"
-                    >
-                      <svg viewBox="0 0 100 100" className="w-12 h-12 text-slate-900" fill="currentColor">
-                        <rect x="0" y="0" width="30" height="30" />
-                        <rect x="6" y="6" width="18" height="18" fill="white" />
-                        <rect x="10" y="10" width="10" height="10" />
-
-                        <rect x="70" y="0" width="30" height="30" />
-                        <rect x="76" y="6" width="18" height="18" fill="white" />
-                        <rect x="80" y="10" width="10" height="10" />
-
-                        <rect x="0" y="70" width="30" height="30" />
-                        <rect x="6" y="76" width="18" height="18" fill="white" />
-                        <rect x="10" y="80" width="10" height="10" />
-
-                        <rect x="40" y="15" width="15" height="15" />
-                        <rect x="15" y="40" width="10" height="15" />
-                        <rect x="70" y="40" width="15" height="10" />
-                        <rect x="40" y="70" width="20" height="15" />
-                      </svg>
-                      <span className="text-[5px] font-bold text-slate-500 font-mono tracking-widest block mt-0.5">VÉRIFIER QR CONFORME</span>
+                  {/* Footnotes and Signatures matching the original photo */}
+                  <div className="pt-3 grid grid-cols-12 gap-3 text-[8.5px] border-t border-black leading-relaxed mt-1 relative z-15">
+                    {/* Left footnotes */}
+                    <div className="col-span-6 space-y-1 text-left">
+                      <p className="font-semibold text-slate-800">
+                        - L'élève ne pourra passer dans la classe supérieure s'il ne subit avec succès un examen de repêchage en :
+                      </p>
+                      <p className="border-b border-black border-dotted h-3.5 w-full"></p>
+                      <p className="font-semibold text-slate-800">
+                        - L’élève {percentGeneral >= 50.0 ? <strong>passe dans la classe supérieure</strong> : <span className="line-through text-slate-400">passe dans la classe supérieure</span>} (1)
+                      </p>
+                      <p className="font-semibold text-slate-800">
+                        - L’élève {percentGeneral < 50.0 ? <strong>double sa classe</strong> : <span className="line-through text-slate-400">double sa classe</span>} (1)
+                      </p>
+                      <p className="font-semibold text-slate-800">
+                        - L’élève a échoué et est orienté vers : .............................................. (1)
+                      </p>
+                      
+                      <div className="pt-2 grid grid-cols-2 gap-2">
+                        <div>
+                          <span className="font-bold uppercase tracking-wider text-slate-500 block text-[7px]">Signature de l'élève</span>
+                          <div className="h-7 border border-dashed border-slate-350 w-24 rounded bg-slate-50/10" />
+                        </div>
+                        <div className="flex flex-col justify-end text-left">
+                          <span className="text-[7px] italic text-slate-500 block leading-tight">
+                            (1) Biffer la mention inutile.
+                          </span>
+                          <span className="text-[7px] font-bold text-red-650 block leading-tight">
+                            Note importante : Le bulletin est sans valeur s'il est raturé ou surchargé.
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <span className="font-bold block uppercase text-slate-550 text-[8px] font-mono mb-0.5">SÉCURITÉ ET ASSURANCES</span>
-                      <p className="text-slate-550 text-[9px] leading-relaxed">Conformément aux protocoles nationaux RDC, l'identification du bulletin par signature en QR assure la sécurité infalsifiable.</p>
-                      <span className="text-emerald-700 font-bold block font-mono text-[9px] mt-1">ID-EMBLÈME: SyGEC-{activeBulletin.studentId}</span>
+
+                    {/* Middle Sceau */}
+                    <div className="col-span-3 text-center flex flex-col justify-between py-1">
+                      <div>
+                        <span className="font-bold uppercase text-slate-500 text-[7px] block tracking-wider">SCEAU DE L’ÉCOLE</span>
+                        <div className="w-16 h-16 border border-slate-300 border-dashed rounded-full mx-auto my-1 flex items-center justify-center text-[6px] text-slate-400 uppercase select-none italic font-mono p-1 text-center leading-tight">
+                          CS SyGEC EPST
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className="inline-block p-1 bg-white border border-slate-200 rounded self-center shadow-3xs cursor-pointer hover:bg-slate-50" onClick={() => onOpenQRScanner(activeBulletin.id)}>
+                          <svg viewBox="0 0 100 100" className="w-8 h-8 text-slate-900 mx-auto" fill="currentColor">
+                            <rect x="0" y="0" width="30" height="30" />
+                            <rect x="6" y="6" width="18" height="18" fill="white" />
+                            <rect x="10" y="10" width="10" height="10" />
+                            <rect x="70" y="0" width="30" height="30" />
+                            <rect x="76" y="6" width="18" height="18" fill="white" />
+                            <rect x="80" y="10" width="10" height="10" />
+                            <rect x="0" y="70" width="30" height="30" />
+                            <rect x="6" y="76" width="18" height="18" fill="white" />
+                            <rect x="10" y="80" width="10" height="10" />
+                            <rect x="40" y="40" width="20" height="20" />
+                          </svg>
+                          <span className="text-[4px] block uppercase tracking-widest text-slate-400 font-mono mt-0.5 font-bold">VÉRIF CONFORME</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="text-center">
-                    <span className="text-[8px] uppercase tracking-wide text-slate-500 font-mono block font-bold mb-1">Signatures des Tuteurs / Parents</span>
-                    <div className="h-10 border border-slate-205 border-dashed rounded bg-slate-50/20" />
-                  </div>
-
-                  <div className="text-right flex flex-col items-end justify-start">
-                    <div>
-                      <span className="text-[8px] uppercase tracking-wide text-slate-500 font-mono block font-bold mb-1">Sceau de l’Inspecteur / Préfet</span>
-                      <p className="text-[9.5px] italic text-slate-650 font-serif leading-none mt-2">Visé : Préfet {schoolObj.rectorName.replace('Monsieur le Préfet ', '')}</p>
-                      <div className="font-black text-[10px] tracking-tight text-blue-800 italic pr-2 mt-1">
-                         Agréé EPST RDC
+                    {/* Right signature */}
+                    <div className="col-span-3 text-right flex flex-col justify-between">
+                      <div>
+                        <p className="font-semibold text-slate-800">
+                          Fait à {schoolObj.city || 'Bukavu'}, le {new Date().toLocaleDateString('fr-FR')}
+                        </p>
+                        <p className="font-extrabold uppercase text-slate-900 mt-1 block text-[8px]">
+                          Le Chef d'Établissement,
+                        </p>
+                        <p className="text-[7.5px] italic text-slate-500 block leading-none">
+                          Nom et signature
+                        </p>
+                      </div>
+                      
+                      <div className="pt-2">
+                        <p className="font-black text-blue-900 uppercase tracking-tight text-[8.5px] leading-tight font-serif italic text-right">
+                          Préfet {schoolObj.rectorName ? schoolObj.rectorName.replace('Monsieur le Préfet ', '') : 'Directeur des Études'}
+                        </p>
+                        <span className="text-[7px] font-mono font-bold text-slate-400 uppercase tracking-wider block mt-1 leading-none">
+                          IGE/P.S/094
+                        </span>
                       </div>
                     </div>
                   </div>
+
                 </div>
               </div>
-            </div>
 
-              {/* Sharing & Control Toolbar */}
+              {/* Control Toolbar */}
               <div className="flex flex-col xl:flex-row xl:items-center justify-between p-4 border-t bg-slate-50 gap-4 shrink-0 rounded-b-2xl">
                 {/* Left side: Sharing Buttons and Utilities */}
                 <div className="flex flex-wrap items-center gap-2">

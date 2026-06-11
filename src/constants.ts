@@ -185,6 +185,26 @@ export const COURSES_BY_OPTION: Record<SchoolOption, { name: string; maxPoints: 
     { name: 'Éducation Civique & Morale', maxPoints: 15 },
     { name: 'Dessin & Travaux Manuels', maxPoints: 10 },
     { name: 'Éducation Physique', maxPoints: 10 }
+  ],
+  'Mécanique Générale': [
+    { name: 'RELIGION', maxPoints: 10 },
+    { name: 'EDUC. CIV & MORAL', maxPoints: 10 },
+    { name: 'EDUCATION A LA VIE', maxPoints: 10 },
+    { name: 'ANGLAIS', maxPoints: 20 },
+    { name: 'GEO/ACTUALITE', maxPoints: 20 },
+    { name: 'HISTOIRE', maxPoints: 20 },
+    { name: 'CHIMIE', maxPoints: 20 },
+    { name: 'PHYSIQUE', maxPoints: 20 },
+    { name: 'ELECTRICITE', maxPoints: 20 },
+    { name: 'INFORMATIQUE', maxPoints: 20 },
+    { name: 'METALLURGIE', maxPoints: 20 },
+    { name: 'DESSIN INDUSTRIEL', maxPoints: 40 },
+    { name: 'MECANIQUE GEN.', maxPoints: 40 },
+    { name: 'RESIST. MATERIEL', maxPoints: 40 },
+    { name: 'TECHNO MECANIQUE', maxPoints: 40 },
+    { name: 'FRANÇAIS', maxPoints: 50 },
+    { name: 'MATHEMATIQUE', maxPoints: 50 },
+    { name: 'PRAT. PROFESSIONNEL', maxPoints: 100 }
   ]
 };
 
