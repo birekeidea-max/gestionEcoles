@@ -27,7 +27,11 @@ import {
   Award,
   BookOpenCheck,
   Handshake,
-  Search
+  Search,
+  Download,
+  Laptop,
+  Smartphone,
+  X
 } from 'lucide-react';
 
 export default function App() {
@@ -223,6 +227,46 @@ export default function App() {
   // Antitheft / verification scan state triggers
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [scanCode, setScanCode] = useState('');
+
+  // PWA Installer states
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
+  const [installPlatform, setInstallPlatform] = useState<'PC' | 'ANDROID' | 'IOS'>('PC');
+
+  useEffect(() => {
+    const handleBeforePrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforePrompt);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforePrompt);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isInstallModalOpen && typeof window !== 'undefined') {
+      const ua = navigator.userAgent.toLowerCase();
+      if (ua.includes('android')) {
+        setInstallPlatform('ANDROID');
+      } else if (ua.includes('iphone') || ua.includes('ipad') || ua.includes('ipod')) {
+        setInstallPlatform('IOS');
+      } else {
+        setInstallPlatform('PC');
+      }
+    }
+  }, [isInstallModalOpen]);
+
+  const handleInstallApp = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log(`PWA setup prompt outcome: ${outcome}`);
+      setDeferredPrompt(null);
+    } else {
+      setIsInstallModalOpen(true);
+    }
+  };
 
   // Secret backdoor 10 clicks on flag to unlock admin space
   const [forcedSuperAdmin, setForcedSuperAdmin] = useState(false);
@@ -495,8 +539,17 @@ export default function App() {
             )}
 
             <button
+              onClick={handleInstallApp}
+              className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-[#007FFF] text-[10.5px] font-black rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-xs shrink-0"
+              title="Télécharger / Installer l'Application sur votre Appareil PC, Android ou iOS"
+            >
+              <Download className="w-3.5 h-3.5 text-[#007FFF] animate-bounce" />
+              <span>Télécharger l'App</span>
+            </button>
+
+            <button
               onClick={handleLogout}
-              className="p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-500 hover:text-red-600 rounded-xl transition-all cursor-pointer"
+              className="p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-500 hover:text-red-600 rounded-xl transition-all cursor-pointer shrink-0"
               title="Se déconnecter de la plateforme"
             >
               <LogOut className="w-4 h-4" />
@@ -1212,6 +1265,171 @@ export default function App() {
         onClose={() => setIsScannerOpen(false)}
         initialCode={scanCode}
       />
+
+      {/* DETAILED PWA INSTALLATION MODAL FOR MOBILE/PC/IOS */}
+      {isInstallModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/65 backdrop-blur-xs flex items-center justify-center p-4 z-[9999] transition-all duration-200">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-md w-full overflow-hidden flex flex-col max-h-[92vh] animate-in fade-in zoom-in duration-150">
+            <div className="bg-gradient-to-r from-[#007FFF] to-indigo-900 p-6 text-white relative shrink-0">
+              <button 
+                onClick={() => setIsInstallModalOpen(false)}
+                className="absolute top-4 right-4 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 p-1.5 rounded-full transition-all cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              
+              <div className="flex items-center gap-3.5 mt-2">
+                <img 
+                  src="/logo.jpg" 
+                  alt="SyGEC RDC Logo" 
+                  className="w-12 h-12 rounded-2xl shadow-lg border-2 border-white/20 object-cover" 
+                />
+                <div>
+                  <h3 className="text-md font-black tracking-tight flex items-center gap-1.5 leading-none">
+                    <span>Installer l'App SyGEC</span>
+                    <span className="text-[8px] bg-sky-400 text-slate-950 font-black px-1.5 py-0.5 rounded uppercase font-mono">CONGO HORS-LIGNE</span>
+                  </h3>
+                  <p className="text-[11px] text-sky-100 mt-1 leading-snug">
+                    Installez le portail de l'EPST RDC directement sur votre téléphone ou ordinateur.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-5 flex-1 overflow-y-auto space-y-4">
+              {/* Dynamic status card */}
+              <div className="p-3 bg-sky-50 rounded-2xl border border-sky-100 flex items-start gap-2.5">
+                <div className="p-1.5 bg-white rounded-lg shadow-3xs text-[#007FFF] shrink-0 mt-0.5">
+                  <Download className="w-4 h-4 animate-bounce" />
+                </div>
+                <div>
+                  <h4 className="text-[9px] font-black text-slate-800 uppercase tracking-wide font-mono">SYSTÈME DISPONIBLE</h4>
+                  <p className="text-[10px] text-slate-600 leading-relaxed mt-0.5">
+                    L'application s'ajoute sous forme de raccourci léger, nécessite <strong className="text-sky-900 font-extrabold text-[10px]">moins de 1,5 Mo</strong> et préserve l'intégralité de vos bases de données de secours !
+                  </p>
+                </div>
+              </div>
+
+              {/* Guide Selector Tabs */}
+              <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-2xl shrink-0">
+                <button
+                  onClick={() => setInstallPlatform('PC')}
+                  className={`py-1.5 rounded-xl text-[10.5px] font-black tracking-tight transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                    installPlatform === 'PC' ? 'bg-white text-slate-900 shadow-sm scale-[1.01]' : 'text-slate-500 hover:text-slate-705'
+                  }`}
+                >
+                  <Laptop className="w-3 h-3" />
+                  <span>Ordinateur</span>
+                </button>
+                <button
+                  onClick={() => setInstallPlatform('ANDROID')}
+                  className={`py-1.5 rounded-xl text-[10.5px] font-black tracking-tight transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                    installPlatform === 'ANDROID' ? 'bg-white text-[#007FFF] shadow-sm scale-[1.01]' : 'text-slate-500 hover:text-slate-705'
+                  }`}
+                >
+                  <Smartphone className="w-3 h-3" />
+                  <span>Android</span>
+                </button>
+                <button
+                  onClick={() => setInstallPlatform('IOS')}
+                  className={`py-1.5 rounded-xl text-[10.5px] font-black tracking-tight transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                    installPlatform === 'IOS' ? 'bg-white text-rose-650 shadow-sm scale-[1.01]' : 'text-slate-500 hover:text-slate-705'
+                  }`}
+                >
+                  <span className="text-[12px] leading-none">🍏</span>
+                  <span>iOS Phone</span>
+                </button>
+              </div>
+
+              {/* Instructional Details Container */}
+              <div className="bg-slate-50 rounded-2xl border border-slate-200/60 p-4 min-h-[150px] flex flex-col justify-start">
+                {installPlatform === 'PC' && (
+                  <div className="space-y-2.5">
+                    <span className="text-[9px] bg-slate-200 text-slate-700 font-black px-1.5 py-0.5 rounded uppercase font-mono">Ordinateur (PC, Mac, Linux)</span>
+                    <ol className="list-none space-y-2.5">
+                      <li className="flex items-start gap-2 text-[11px] text-slate-600 leading-relaxed">
+                        <span className="w-4 h-4 rounded-full bg-slate-200 text-slate-800 text-[9px] font-black flex items-center justify-center shrink-0 mt-0.5">1</span>
+                        <span>Repérez l'icône de **Téléchargement** (ou d'écran d'installation) tout à droite dans la **barre d'adresse (URL)** de votre navigateur Chrome ou Edge.</span>
+                      </li>
+                      <li className="flex items-start gap-2 text-[11px] text-slate-600 leading-relaxed">
+                        <span className="w-4 h-4 rounded-full bg-slate-200 text-slate-800 text-[9px] font-black flex items-center justify-center shrink-0 mt-0.5">2</span>
+                        <span>Cliquez dessus puis sélectionnez <strong className="text-slate-900 font-extrabold text-[11px]">"Installer SyGEC RDC"</strong>.</span>
+                      </li>
+                      <li className="flex items-start gap-2 text-[11px] text-slate-600 leading-relaxed">
+                        <span className="w-4 h-4 rounded-full bg-slate-200 text-slate-800 text-[9px] font-black flex items-center justify-center shrink-0 mt-0.5">3</span>
+                        <span>L'application s'ouvrira seule, son icône apparaissant alors sur votre bureau pour un lancement rapide.</span>
+                      </li>
+                    </ol>
+                  </div>
+                )}
+
+                {installPlatform === 'ANDROID' && (
+                  <div className="space-y-2.5">
+                    <span className="text-[9px] bg-blue-10 text-blue-900 font-black px-1.5 py-0.5 rounded uppercase font-mono">Smartphone Android (Chrome or Samsung)</span>
+                    <ol className="list-none space-y-2.5">
+                      <li className="flex items-start gap-2 text-[11px] text-slate-600 leading-relaxed">
+                        <span className="w-4 h-4 rounded-full bg-[#007FFF]/10 text-[#007FFF] text-[9px] font-black flex items-center justify-center shrink-0 mt-0.5">1</span>
+                        <span>Appuyez sur les **trois points verticaux** (ou le menu de bas d'écran) pour ouvrir les paramètres de votre navigateur mobile.</span>
+                      </li>
+                      <li className="flex items-start gap-2 text-[11px] text-slate-600 leading-relaxed">
+                        <span className="w-4 h-4 rounded-full bg-[#007FFF]/10 text-[#007FFF] text-[9px] font-black flex items-center justify-center shrink-0 mt-0.5">2</span>
+                        <span>Sélectionnez l'option <strong className="text-slate-900 font-extrabold text-[11px]">"Installer l'application"</strong> ou <strong className="text-slate-900 font-extrabold text-[11px]">"Ajouter à l'écran d'accueil"</strong>.</span>
+                      </li>
+                      <li className="flex items-start gap-2 text-[11px] text-slate-600 leading-relaxed">
+                        <span className="w-4 h-4 rounded-full bg-[#007FFF]/10 text-[#007FFF] text-[9px] font-black flex items-center justify-center shrink-0 mt-0.5">3</span>
+                        <span>L'application prend place instantanément dans la liste de vos applications comme n'importe quelle app native du Google Play Store !</span>
+                      </li>
+                    </ol>
+                  </div>
+                )}
+
+                {installPlatform === 'IOS' && (
+                  <div className="space-y-2.5">
+                    <span className="text-[9px] bg-rose-50 text-rose-800 font-black px-1.5 py-0.5 rounded uppercase font-mono">Apple iOS (Navigateur Safari)</span>
+                    <ol className="list-none space-y-2.5">
+                      <li className="flex items-start gap-2 text-[11px] text-slate-600 leading-relaxed">
+                        <span className="w-4 h-4 rounded-full bg-rose-100 text-rose-800 text-[9px] font-black flex items-center justify-center shrink-0 mt-0.5">1</span>
+                        <span>Ouvrez impérativement cette page Web sous le navigateur officiel **Safari** de Apple.</span>
+                      </li>
+                      <li className="flex items-start gap-2 text-[11px] text-slate-600 leading-relaxed">
+                        <span className="w-4 h-4 rounded-full bg-rose-100 text-rose-800 text-[9px] font-black flex items-center justify-center shrink-0 mt-0.5">2</span>
+                        <span>Appuyez sur le bouton **Partager** (représenté par un carré avec une flèche montante) au bas de votre écran.</span>
+                      </li>
+                      <li className="flex items-start gap-2 text-[11px] text-slate-600 leading-relaxed">
+                        <span className="w-4 h-4 rounded-full bg-rose-100 text-rose-800 text-[9px] font-black flex items-center justify-center shrink-0 mt-0.5">3</span>
+                        <span>Faites défiler le tiroir d'options vers le bas, puis sélectionnez <strong className="text-slate-900 font-extrabold text-[11px]">"Sur l'écran d'accueil"</strong> (+ Add to Home Screen) et validez.</span>
+                      </li>
+                    </ol>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-slate-50 px-5 py-3.5 border-t border-slate-150 flex flex-col sm:flex-row gap-3 items-center justify-between shrink-0">
+              <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest font-mono">SyGEC &bull; Ministère de l'EPST RDC</span>
+              {deferredPrompt ? (
+                <button
+                  onClick={() => {
+                    handleInstallApp();
+                    setIsInstallModalOpen(false);
+                  }}
+                  className="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-[#007FFF] to-indigo-900 hover:opacity-95 text-white text-[11px] font-black rounded-xl cursor-pointer shadow-md flex items-center justify-center gap-1.5"
+                >
+                  <Download className="w-3.5 h-3.5 animate-bounce" />
+                  <span>Lancer l'installation</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => setIsInstallModalOpen(false)}
+                  className="w-full sm:w-auto px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-black rounded-xl cursor-pointer shadow-xs text-center"
+                >
+                  Fermer le Guide
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* AI Assistant Guide for SyGEC-RDC platform */}
       <AIGuideAssistant />

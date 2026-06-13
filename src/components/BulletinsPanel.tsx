@@ -315,6 +315,21 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
   const [newCourseName, setNewCourseName] = useState('');
   const [newCourseMaxPoints, setNewCourseMaxPoints] = useState<number>(20);
 
+  // Extended customize fields for Bulletin matching official EPST style
+  const [customStudentName, setCustomStudentName] = useState('');
+  const [customStudentGender, setCustomStudentGender] = useState<'M' | 'F'>('M');
+  const [customBirthDate, setCustomBirthDate] = useState('04/10/2005');
+  const [customBirthPlace, setCustomBirthPlace] = useState('BUKAVU');
+  const [customSchoolName, setCustomSchoolName] = useState('');
+  const [customSchoolCity, setCustomSchoolCity] = useState('BUKAVU');
+  const [customSchoolCommune, setCustomSchoolCommune] = useState('IBANDA');
+  const [customSchoolNationalCode, setCustomSchoolNationalCode] = useState('');
+  const [customPermNumber, setCustomPermNumber] = useState('PERM 002');
+  const [customTitulaireName, setCustomTitulaireName] = useState('TITULAIRE DE CLASSE / DG DESIGNÉ');
+  const [customTitulaireId, setCustomTitulaireId] = useState('');
+  const [customAcademicYear, setCustomAcademicYear] = useState('2025-2026');
+  const [customId, setCustomId] = useState(''); // Custom Bulletin ID or N° ID ÉLÈVE
+
   // File import ref
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -392,7 +407,7 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
   const handleOpenCreateForm = () => {
     setFormSchoolId(currentSchool.id);
     setFormOption('Pédagogie');
-    setFormClass('6ème Année');
+    setFormClass('6ème Année' as any);
     setSelectedStudentId('');
     setIsManualInput(false);
     setManualStudentName('');
@@ -402,6 +417,22 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
     setDaysAbsent(0);
     setBulletinStatus('Brouillon');
     setFormError('');
+
+    // Sensible defaults for customization
+    setCustomStudentName('');
+    setCustomStudentGender('M');
+    setCustomBirthDate('04/10/2005');
+    setCustomBirthPlace('BUKAVU');
+    setCustomSchoolName(currentSchool.name);
+    setCustomSchoolCity(currentSchool.city || 'BUKAVU');
+    setCustomSchoolCommune(currentSchool.commune || 'IBANDA');
+    setCustomSchoolNationalCode(currentSchool.nationalCode || '20252000');
+    setCustomPermNumber('PERM 002');
+    setCustomId(`CD-${Date.now().toString().slice(-6)}`);
+    setCustomTitulaireName('TITULAIRE DE CLASSE / DG DESIGNÉ');
+    setCustomTitulaireId(`T-SYGEC-${Math.random().toString(36).substring(2, 7).toUpperCase()}`);
+    setCustomAcademicYear('2025-2026');
+
     setIsFormOpen(true);
     
     // Default load corresponding to 'Pédagogie' option
@@ -440,6 +471,19 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
     const studentObj = students.find(s => s.id === id);
     if (!studentObj) return;
 
+    // Load custom details automatically from enrolled student record
+    setCustomStudentName(studentObj.fullName);
+    setCustomStudentGender(studentObj.gender);
+    setCustomBirthDate(studentObj.birthDate || '04/10/2005');
+    setCustomBirthPlace(studentObj.address || 'BUKAVU');
+    setCustomId(studentObj.id);
+
+    const matchSchool = schools.find(s => s.id === studentObj.schoolId) || currentSchool;
+    setCustomSchoolName(matchSchool.name);
+    setCustomSchoolCity(matchSchool.city || 'BUKAVU');
+    setCustomSchoolCommune(matchSchool.commune || 'IBANDA');
+    setCustomSchoolNationalCode(matchSchool.nationalCode || '20252000');
+
     // Check if bulletin already exist
     const matchedBul = bulletins.find(b => b.studentId === id);
     if (matchedBul) {
@@ -447,6 +491,10 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
       setDaysAbsent(matchedBul.daysAbsent);
       setGrades(matchedBul.grades);
       setBulletinStatus(matchedBul.status || 'Brouillon');
+      if (matchedBul.academicYear) setCustomAcademicYear(matchedBul.academicYear);
+      if (matchedBul.permNumber) setCustomPermNumber(matchedBul.permNumber);
+      if (matchedBul.titulaireName) setCustomTitulaireName(matchedBul.titulaireName);
+      if (matchedBul.titulaireId) setCustomTitulaireId(matchedBul.titulaireId);
       setFormError('Un bulletin existe déjà pour cet élève. Vous pouvez modifier ses détails.');
     } else {
       setFormError('');
@@ -566,29 +614,42 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
       obtainedExamSecondSemester: Math.min(g.maxPoints, Math.max(0, Number(g.obtainedExamSecondSemester) || 0)),
     }));
 
+    const resolvedStudentId = isManualInput ? (customId.trim() || studentId) : studentId;
+
     const preparedBulletin: Bulletin = {
       id: existing?.id || bulletinId,
-      studentId,
+      studentId: resolvedStudentId,
       classLevel: finalClass,
       option: finalOption,
       schoolId: formSchoolId,
-      academicYear: '2025-2026',
+      academicYear: customAcademicYear.trim() || '2025-2026',
       grades: cleanedGrades,
       conduct,
       daysAbsent,
-      status: bulletinStatus
+      status: bulletinStatus,
+      studentName: customStudentName.trim() || (isManualInput ? manualStudentName : undefined),
+      studentGender: customStudentGender,
+      studentBirthDate: customBirthDate.trim(),
+      studentBirthPlace: customBirthPlace.trim(),
+      schoolName: customSchoolName.trim(),
+      schoolCity: customSchoolCity.trim(),
+      schoolCommune: customSchoolCommune.trim(),
+      schoolNationalCode: customSchoolNationalCode.trim(),
+      permNumber: customPermNumber.trim(),
+      titulaireName: customTitulaireName.trim(),
+      titulaireId: customTitulaireId.trim(),
     };
 
     // Append to virtual students database if manually typed to prevent lookup crash
     if (isManualInput) {
-      const isRegistered = students.some(s => s.fullName === manualStudentName.trim() && s.schoolId === formSchoolId);
+      const isRegistered = students.some(s => s.id === resolvedStudentId);
       if (!isRegistered) {
         const dummyStudent: Student = {
-          id: studentId,
-          fullName: manualStudentName.trim(),
-          gender: manualStudentGender,
-          birthDate: '2010-01-01',
-          address: 'Adresse non fournie',
+          id: resolvedStudentId,
+          fullName: (customStudentName || manualStudentName).trim(),
+          gender: customStudentGender,
+          birthDate: customBirthDate,
+          address: customBirthPlace,
           classLevel: finalClass,
           option: finalOption,
           schoolId: formSchoolId,
@@ -1162,9 +1223,25 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
                             setManualStudentName(studentName);
                           }
 
+                          // Set customizable EPST national fields on edit
+                          setCustomStudentName(b.studentName || studentName);
+                          setCustomStudentGender(b.studentGender || (sits ? sits.gender : 'M'));
+                          setCustomBirthDate(b.studentBirthDate || (sits ? sits.birthDate : '04/10/2005'));
+                          setCustomBirthPlace(b.studentBirthPlace || (sits ? sits.address : 'BUKAVU'));
+                          setCustomSchoolName(b.schoolName || currentSchool.name);
+                          setCustomSchoolCity(b.schoolCity || currentSchool.city || 'BUKAVU');
+                          setCustomSchoolCommune(b.schoolCommune || currentSchool.commune || 'IBANDA');
+                          setCustomSchoolNationalCode(b.schoolNationalCode || currentSchool.nationalCode || '20252000');
+                          setCustomPermNumber(b.permNumber || `PERM-0${b.id.slice(-4).toUpperCase()}`);
+                          setCustomId(b.studentId || b.id || '');
+                          setCustomTitulaireName(b.titulaireName || 'TITULAIRE DE CLASSE / DG DESIGNÉ');
+                          setCustomTitulaireId(b.titulaireId || `T-SYGEC-${b.id.slice(0, 5).toUpperCase()}`);
+                          setCustomAcademicYear(b.academicYear || '2025-2026');
+
                           setConduct(b.conduct);
                           setDaysAbsent(b.daysAbsent);
                           setGrades(b.grades);
+                          setBulletinStatus(b.status || 'Brouillon');
                           setIsFormOpen(true);
                           setFormError('');
                         }}
@@ -1519,6 +1596,162 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
                       onChange={(e) => setDaysAbsent(Number(e.target.value))}
                       className="w-full rounded-lg border border-slate-300 p-1 font-mono font-bold text-[11px]"
                     />
+                  </div>
+                </div>
+
+                {/* ADVANCED EPST METADATA ENCODER FIELDS */}
+                <div className="p-4 bg-blue-50/50 rounded-xl border border-blue-200 space-y-3">
+                  <span className="font-extrabold text-[10px] text-blue-900 uppercase block font-mono">
+                    🏛️ Encodage des Données du Programme National (Agréé EPST)
+                  </span>
+                  <p className="text-[9px] text-slate-500 leading-tight">
+                    Modifiez manuellement tous les détails d'identification de l'élève, de l'école et du titulaire pour correspondre exactement à votre canevas physique.
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-[9px] font-bold text-slate-500 uppercase mb-0.5">N° ID ÉLÈVE (Visible en haut)</label>
+                      <input
+                        type="text"
+                        value={customId}
+                        onChange={(e) => setCustomId(e.target.value)}
+                        placeholder="Ex: EP-824-0019"
+                        className="w-full rounded-md border border-slate-300 p-1.5 text-xs font-semibold uppercase font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[9px] font-bold text-slate-500 uppercase mb-0.5">Nom complet officiel</label>
+                      <input
+                        type="text"
+                        value={customStudentName}
+                        onChange={(e) => setCustomStudentName(e.target.value)}
+                        placeholder="Ex: AKONKWA BENEDICT Sharon"
+                        className="w-full rounded-md border border-slate-300 p-1.5 text-xs font-semibold"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[9px] font-bold text-slate-500 uppercase mb-0.5">Sexe de l'élève</label>
+                      <select
+                        value={customStudentGender}
+                        onChange={(e) => setCustomStudentGender(e.target.value as 'M' | 'F')}
+                        className="w-full rounded-md border border-slate-300 p-1.5 text-xs font-semibold bg-white"
+                      >
+                        <option value="M">Masculin (M)</option>
+                        <option value="F">Féminin (F)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[9px] font-bold text-slate-500 uppercase mb-0.5">Né(e) Le (Date Naissance)</label>
+                      <input
+                        type="text"
+                        value={customBirthDate}
+                        onChange={(e) => setCustomBirthDate(e.target.value)}
+                        placeholder="Ex: 04/10/2005"
+                        className="w-full rounded-md border border-slate-300 p-1.5 text-xs font-semibold font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[9px] font-bold text-slate-500 uppercase mb-0.5">Né(e) À (Lieu Naissance)</label>
+                      <input
+                        type="text"
+                        value={customBirthPlace}
+                        onChange={(e) => setCustomBirthPlace(e.target.value)}
+                        placeholder="Ex: BUKAVU"
+                        className="w-full rounded-md border border-slate-300 p-1.5 text-xs font-semibold uppercase"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[9px] font-bold text-slate-500 uppercase mb-0.5">Année Scolaire</label>
+                      <input
+                        type="text"
+                        value={customAcademicYear}
+                        onChange={(e) => setCustomAcademicYear(e.target.value)}
+                        placeholder="Ex: 2025-2026"
+                        className="w-full rounded-md border border-slate-300 p-1.5 text-xs font-semibold font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[9px] font-bold text-slate-500 uppercase mb-0.5">Nom de l'Établissement</label>
+                      <input
+                        type="text"
+                        value={customSchoolName}
+                        onChange={(e) => setCustomSchoolName(e.target.value)}
+                        placeholder="Ex: CS SAINT MICHEL"
+                        className="w-full rounded-md border border-slate-300 p-1.5 text-xs font-semibold uppercase"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[9px] font-bold text-slate-500 uppercase mb-0.5">Code National École</label>
+                      <input
+                        type="text"
+                        value={customSchoolNationalCode}
+                        onChange={(e) => setCustomSchoolNationalCode(e.target.value)}
+                        placeholder="Ex: 20252000"
+                        className="w-full rounded-md border border-slate-300 p-1.5 text-xs font-semibold font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[9px] font-bold text-slate-500 uppercase mb-0.5">Ville d'implantation</label>
+                      <input
+                        type="text"
+                        value={customSchoolCity}
+                        onChange={(e) => setCustomSchoolCity(e.target.value)}
+                        placeholder="Ex: BUKAVU"
+                        className="w-full rounded-md border border-slate-300 p-1.5 text-xs font-semibold uppercase"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[9px] font-bold text-slate-500 uppercase mb-0.5">Commune d'implantation</label>
+                      <input
+                        type="text"
+                        value={customSchoolCommune}
+                        onChange={(e) => setCustomSchoolCommune(e.target.value)}
+                        placeholder="Ex: IBANDA"
+                        className="w-full rounded-md border border-slate-300 p-1.5 text-xs font-semibold uppercase"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[9px] font-bold text-slate-500 uppercase mb-0.5">N° Permanent (N° PERM)</label>
+                      <input
+                        type="text"
+                        value={customPermNumber}
+                        onChange={(e) => setCustomPermNumber(e.target.value)}
+                        placeholder="Ex: PERM 002"
+                        className="w-full rounded-md border border-slate-300 p-1.5 text-xs font-semibold uppercase font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[9px] font-bold text-slate-500 uppercase mb-0.5">Nom du Titulaire</label>
+                      <input
+                        type="text"
+                        value={customTitulaireName}
+                        onChange={(e) => setCustomTitulaireName(e.target.value)}
+                        placeholder="Ex: Jean-Bosco Kabeya"
+                        className="w-full rounded-md border border-slate-300 p-1.5 text-xs font-semibold uppercase"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[9px] font-bold text-slate-500 uppercase mb-0.5">ID Titulaire (ID TIT)</label>
+                      <input
+                        type="text"
+                        value={customTitulaireId}
+                        onChange={(e) => setCustomTitulaireId(e.target.value)}
+                        placeholder="Ex: T-SYGEC-F820"
+                        className="w-full rounded-md border border-slate-300 p-1.5 text-xs font-semibold uppercase font-mono"
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -1904,7 +2137,7 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
                       <div className="col-span-12 p-1.5 flex items-center gap-2">
                         <span className="font-bold uppercase tracking-wider text-slate-705">N° ID ÉLÈVE :</span>
                         <span className="font-black text-[10px] tracking-widest text-[#D32F2F] bg-white px-2 py-0.5 border border-slate-300 font-mono">
-                          {activeBulletin.studentId.toUpperCase()}
+                          {(activeBulletin.studentId || '').toUpperCase()}
                         </span>
                       </div>
 
@@ -1912,15 +2145,15 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
                       <div className="col-span-12 grid grid-cols-12 divide-x divide-black">
                         <div className="col-span-4 p-1.5 flex items-center gap-1">
                           <span className="font-bold uppercase text-slate-755">VILLE :</span>
-                          <span className="font-extrabold text-black uppercase">{schoolObj.city ? schoolObj.city.toUpperCase() : 'BUKAVU'}</span>
+                          <span className="font-extrabold text-black uppercase">{activeBulletin.schoolCity || schoolObj.city || 'BUKAVU'}</span>
                         </div>
                         <div className="col-span-6 p-1.5 flex items-center gap-1">
                           <span className="font-bold uppercase text-slate-755">ÉLÈVE :</span>
-                          <span className="font-black text-black uppercase text-[10px]">{displayName.toUpperCase()}</span>
+                          <span className="font-black text-black uppercase text-[10px]">{activeBulletin.studentName || displayName.toUpperCase()}</span>
                         </div>
                         <div className="col-span-2 p-1.5 flex items-center justify-between">
                           <span className="font-bold uppercase text-slate-755">SEXE :</span>
-                          <span className="font-black text-black">{genderText.charAt(0)}</span>
+                          <span className="font-black text-black">{(activeBulletin.studentGender || genderText).charAt(0).toUpperCase()}</span>
                         </div>
                       </div>
 
@@ -1928,15 +2161,15 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
                       <div className="col-span-12 grid grid-cols-12 divide-x divide-black">
                         <div className="col-span-4 p-1.5 flex items-center gap-1">
                           <span className="font-bold uppercase text-slate-755">COMMUNE :</span>
-                          <span className="font-extrabold text-black uppercase">{schoolObj.commune ? schoolObj.commune.toUpperCase() : 'IBANDA'}</span>
+                          <span className="font-extrabold text-black uppercase">{activeBulletin.schoolCommune || schoolObj.commune || 'IBANDA'}</span>
                         </div>
                         <div className="col-span-4 p-1.5 flex items-center gap-1">
                           <span className="font-bold uppercase text-slate-755">NE(E) A :</span>
-                          <span className="font-extrabold text-black uppercase">{schoolObj.city ? schoolObj.city.toUpperCase() : 'BUKAVU'}</span>
+                          <span className="font-extrabold text-black uppercase">{activeBulletin.studentBirthPlace || schoolObj.city || 'BUKAVU'}</span>
                         </div>
                         <div className="col-span-4 p-1.5 flex items-center gap-1">
                           <span className="font-bold uppercase text-slate-755">LE :</span>
-                          <span className="font-extrabold text-black">{student ? student.birthDate : '04/10/2005'}</span>
+                          <span className="font-extrabold text-black">{activeBulletin.studentBirthDate || (student ? student.birthDate : '04/10/2005')}</span>
                         </div>
                       </div>
 
@@ -1944,7 +2177,7 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
                       <div className="col-span-12 grid grid-cols-12 divide-x divide-black">
                         <div className="col-span-6 p-1.5 flex items-center gap-1">
                           <span className="font-bold uppercase text-slate-755">ÉCOLE :</span>
-                          <span className="font-black text-black uppercase">{schoolObj.name.toUpperCase()}</span>
+                          <span className="font-black text-black uppercase">{activeBulletin.schoolName || schoolObj.name.toUpperCase()}</span>
                         </div>
                         <div className="col-span-6 p-1.5 flex items-center gap-1">
                           <span className="font-bold uppercase text-slate-755">CLASSE-OPTION :</span>
@@ -1956,11 +2189,11 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
                       <div className="col-span-12 grid grid-cols-12 divide-x divide-black">
                         <div className="col-span-6 p-1.5 flex items-center gap-1">
                           <span className="font-bold uppercase text-slate-755">CODE NATIONAL :</span>
-                          <span className="font-black text-black font-mono">{schoolObj.nationalCode}</span>
+                          <span className="font-black text-black font-mono">{activeBulletin.schoolNationalCode || schoolObj.nationalCode}</span>
                         </div>
                         <div className="col-span-6 p-1.5 flex items-center gap-1">
                           <span className="font-bold uppercase text-slate-755">N° PERM :</span>
-                          <span className="font-black text-black text-[8.5px]">PERM-0{activeBulletin.id.slice(-4).toUpperCase()}</span>
+                          <span className="font-black text-black text-[8.5px]">{activeBulletin.permNumber || `PERM-0${activeBulletin.id.slice(-4).toUpperCase()}`}</span>
                         </div>
                       </div>
 
@@ -1968,11 +2201,11 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
                       <div className="col-span-12 grid grid-cols-12 divide-x divide-black">
                         <div className="col-span-8 p-1.5 flex items-center gap-1">
                           <span className="font-bold uppercase text-slate-755">TITULAIRE :</span>
-                          <span className="font-extrabold text-black uppercase">TITULAIRE DE CLASSE / DG DESIGNÉ</span>
+                          <span className="font-extrabold text-black uppercase">{activeBulletin.titulaireName || 'TITULAIRE DE CLASSE / DG DESIGNÉ'}</span>
                         </div>
                         <div className="col-span-4 p-1.5 flex items-center gap-1">
                           <span className="font-bold uppercase text-slate-755">ID TIT :</span>
-                          <span className="font-black text-slate-800 font-mono">T-SYGEC-{activeBulletin.id.slice(0, 5).toUpperCase()}</span>
+                          <span className="font-black text-slate-800 font-mono">{activeBulletin.titulaireId || `T-SYGEC-${activeBulletin.id.slice(0, 5).toUpperCase()}`}</span>
                         </div>
                       </div>
                     </div>
@@ -2314,9 +2547,25 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
                         setManualStudentName(displayName);
                       }
 
+                      // Populate custom EPST states on edit inside Details view
+                      setCustomStudentName(activeBulletin.studentName || displayName);
+                      setCustomStudentGender(activeBulletin.studentGender || (sits ? sits.gender : 'M'));
+                      setCustomBirthDate(activeBulletin.studentBirthDate || (sits ? sits.birthDate : '04/10/2005'));
+                      setCustomBirthPlace(activeBulletin.studentBirthPlace || (sits ? sits.address : 'BUKAVU'));
+                      setCustomSchoolName(activeBulletin.schoolName || schoolObj.name || currentSchool.name);
+                      setCustomSchoolCity(activeBulletin.schoolCity || schoolObj.city || currentSchool.city || 'BUKAVU');
+                      setCustomSchoolCommune(activeBulletin.schoolCommune || schoolObj.commune || currentSchool.commune || 'IBANDA');
+                      setCustomSchoolNationalCode(activeBulletin.schoolNationalCode || schoolObj.nationalCode || currentSchool.nationalCode || '20252000');
+                      setCustomPermNumber(activeBulletin.permNumber || `PERM-0${activeBulletin.id.slice(-4).toUpperCase()}`);
+                      setCustomId(activeBulletin.studentId || activeBulletin.id || '');
+                      setCustomTitulaireName(activeBulletin.titulaireName || 'TITULAIRE DE CLASSE / DG DESIGNÉ');
+                      setCustomTitulaireId(activeBulletin.titulaireId || `T-SYGEC-${activeBulletin.id.slice(0, 5).toUpperCase()}`);
+                      setCustomAcademicYear(activeBulletin.academicYear || '2025-2026');
+
                       setConduct(activeBulletin.conduct);
                       setDaysAbsent(activeBulletin.daysAbsent);
                       setGrades(activeBulletin.grades);
+                      setBulletinStatus(activeBulletin.status || 'Brouillon');
                       setIsFormOpen(true);
                       setFormError('');
                       setActiveBulletin(null); // Close the preview to show the editor

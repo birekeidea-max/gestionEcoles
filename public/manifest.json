@@ -1,0 +1,25 @@
+{
+  "name": "SyGEC RDC - Système de Gestion des Écoles du Congo",
+  "short_name": "SyGEC RDC",
+  "description": "Portail National de l'EPST RDC pour la gestion des élèves, bulletins nationaux certifiés et reçus scolaires sécurisés.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#1e3a8a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "logo.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}

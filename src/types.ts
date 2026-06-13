@@ -125,7 +125,18 @@ export interface Bulletin {
   grades: CourseGrade[];
   conduct: 'Excellente' | 'Très Bonne' | 'Bonne' | 'Assez Bonne' | 'Médiocre';
   daysAbsent: number;
-  status?: 'brouillon' | 'valide'; // Encodage brouillon vs validé
+  status?: 'Brouillon' | 'Finalisé' | 'brouillon' | 'valide'; // Encodage brouillon vs validé
+  studentName?: string;
+  studentGender?: 'M' | 'F';
+  studentBirthDate?: string;
+  studentBirthPlace?: string;
+  schoolName?: string;
+  schoolCity?: string;
+  schoolCommune?: string;
+  schoolNationalCode?: string;
+  permNumber?: string;
+  titulaireName?: string;
+  titulaireId?: string;
 }
 
 export interface CotationSheet {
