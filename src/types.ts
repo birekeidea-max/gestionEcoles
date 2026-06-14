@@ -113,6 +113,7 @@ export interface CourseGrade {
   obtainedThirdPeriod: number; // 3ème période (Trimestre 2, A)
   obtainedFourthPeriod: number; // 4ème période (Trimestre 2, B)
   obtainedExamSecondSemester: number; // Examen du 2ème Semestre
+  repechageGrade?: number; // Examen de repêchage grade (if applicable)
 }
 
 export interface Bulletin {

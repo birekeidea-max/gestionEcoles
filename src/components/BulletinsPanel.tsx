@@ -333,6 +333,17 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
   // File import ref
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const verifyId = params.get('verify_bulletin');
+    if (verifyId) {
+      const bul = bulletins.find(b => b.id === verifyId);
+      if (bul) {
+        setActiveBulletin(bul);
+      }
+    }
+  }, [bulletins]);
+
   const matchedSchool = schools.find(s => s.id === formSchoolId) || currentSchool;
 
   // Filter lists based on selected school context
@@ -612,6 +623,7 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
       obtainedThirdPeriod: Math.min(g.maxPoints, Math.max(0, Number(g.obtainedThirdPeriod) || 0)),
       obtainedFourthPeriod: Math.min(g.maxPoints, Math.max(0, Number(g.obtainedFourthPeriod) || 0)),
       obtainedExamSecondSemester: Math.min(g.maxPoints, Math.max(0, Number(g.obtainedExamSecondSemester) || 0)),
+      repechageGrade: g.repechageGrade !== undefined ? Math.min(g.maxPoints, Math.max(0, Number(g.repechageGrade) || 0)) : undefined,
     }));
 
     const resolvedStudentId = isManualInput ? (customId.trim() || studentId) : studentId;
@@ -1865,7 +1877,7 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                        <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
                           {/* Semester 1 Periodic Marks */}
                           <div>
                             <span className="text-[9px] text-slate-400 block mb-0.5 uppercase font-mono">Pér. 1 (/ {g.maxPoints})</span>
@@ -1933,6 +1945,36 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
                               value={g.obtainedExamSecondSemester}
                               onChange={(e) => handleGradeChange(idx, 'obtainedExamSecondSemester', e.target.value)}
                               className="w-full text-center border border-indigo-200 bg-indigo-100/10 rounded p-1 font-mono font-bold text-xs"
+                            />
+                          </div>
+
+                          {/* Repêchage */}
+                          <div>
+                            <span className="text-[9px] text-rose-500 block mb-0.5 uppercase font-mono font-bold">Répêch. (/ {g.maxPoints})</span>
+                            <input
+                              type="number"
+                              min={0}
+                              max={g.maxPoints}
+                              value={g.repechageGrade !== undefined ? g.repechageGrade : ''}
+                              onChange={(e) => {
+                                const valString = e.target.value;
+                                const cp = [...grades];
+                                if (valString === '') {
+                                  delete cp[idx].repechageGrade;
+                                } else {
+                                  const parsed = Number(valString);
+                                  if (!isNaN(parsed)) {
+                                    cp[idx] = {
+                                      ...cp[idx],
+                                      repechageGrade: Math.min(cp[idx].maxPoints, Math.max(0, parsed))
+                                    };
+                                  }
+                                }
+                                setGrades(cp);
+                                triggerAutosaveNotifier();
+                              }}
+                              className="w-full text-center border border-rose-200 bg-rose-500/5 rounded p-1 font-mono font-black text-xs text-rose-800"
+                              placeholder="—"
                             />
                           </div>
                         </div>
@@ -2059,6 +2101,28 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
                 </div>
               </div>
 
+              {/* Dynamic QR verification scan banner */}
+              {(() => {
+                const params = new URLSearchParams(window.location.search);
+                const isVerifiedScan = params.get('verify_bulletin') === activeBulletin.id;
+                if (!isVerifiedScan) return null;
+                return (
+                  <div className="bg-emerald-50 border-2 border-emerald-400 text-emerald-950 rounded-xl p-3 flex items-center gap-3 text-xs shrink-0 shadow-xs animate-shake">
+                    <div className="bg-emerald-500 text-white rounded-full p-1.5 flex items-center justify-center shrink-0">
+                      <CheckCircle className="w-[18px] h-[18px]" />
+                    </div>
+                    <div>
+                      <p className="font-extrabold text-[12.5px] text-emerald-900 uppercase tracking-wide">
+                        ✅ BULLETIN OFFICIEL SÉCURISÉ ET VÉRIFIÉ PAR LA SYGEC &amp; SERNIE
+                      </p>
+                      <p className="text-[10.5px] text-emerald-800 leading-tight">
+                        L'intégrité de ce bulletin de notes a été certifiée conforme aux registres de l'Inspection Générale de l'EPST RDC. Les cotes affichées correspondent exactement à l'inscription sécurisée n° <strong className="font-mono">{activeBulletin.id}</strong>.
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Dynamic draft mode reminder banner */}
               {(!activeBulletin.status || activeBulletin.status === 'Brouillon') && (
                 <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-xl p-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs shrink-0 shadow-xs">
@@ -2096,9 +2160,9 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
                   {/* Official RDC Tricolor Banner Line */}
                   <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-sky-400 via-yellow-400 to-red-500 z-20" />
 
-                  {/* Armoiries et Drapeau en fond filigrane - HAUTEMENT VISIBLE ET PROPRE */}
+                  {/* Armoiries et Drapeau en fond filigrane - HAUTEMENT VISIBLE ET TRÈS ÉCLAIRÉ */}
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 select-none">
-                    <CongoCoatOfArms className="w-[450px] h-[450px]" opacityClassName="opacity-[0.55]" />
+                    <CongoCoatOfArms className="w-[450px] h-[450px]" opacityClassName="opacity-[0.88]" />
                   </div>
 
                   {/* Robust security diagonal watermark for draft bulletins */}
@@ -2125,9 +2189,20 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
                         <p className="text-[8px] font-bold text-slate-650 tracking-wider">SECRETARIAT GENERAL &bull; INSPECTION GENERALE DE L'EPST</p>
                       </div>
 
-                      {/* Right Coat of Arms */}
-                      <div className="w-14 h-10 flex items-center justify-center">
-                        <CongoCoatOfArms className="w-10 h-10" opacityClassName="opacity-100" />
+                      {/* Right Coat of Arms & Security Inspection QR Code */}
+                      <div className="flex items-center gap-2.5 shrink-0">
+                        <div className="text-center flex flex-col items-center">
+                          <img 
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=${encodeURIComponent(window.location.origin + '?verify_bulletin=' + activeBulletin.id)}`}
+                            alt="SyGEC Verification QR Code"
+                            className="w-12 h-12 border border-black p-0.5 bg-white shadow-xs"
+                            referrerPolicy="no-referrer"
+                          />
+                          <span className="text-[5.5px] font-black text-slate-800 tracking-tighter mt-0.5 leading-none">VERIFIER CERTIF.</span>
+                        </div>
+                        <div className="w-10 h-10 flex items-center justify-center">
+                          <CongoCoatOfArms className="w-10 h-10" opacityClassName="opacity-100" />
+                        </div>
                       </div>
                     </div>
 
@@ -2219,7 +2294,7 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
                   </div>
 
                   {/* Official RDC Grades Table matrix conforming to original photo grouping */}
-                  <div className="overflow-x-auto border border-black relative z-10 bg-white/70">
+                  <div className="overflow-x-auto border border-black relative z-10 bg-white/40">
                     <table className="w-full text-[9px] text-left border-collapse border border-black">
                       <thead>
                         <tr className="border-b border-black divide-x divide-black font-black text-center bg-slate-100 text-black">
@@ -2229,10 +2304,10 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
                           <th rowSpan={2} className="py-2 px-0.5 bg-slate-50 border-r border-black text-[8px] uppercase font-black text-slate-700 text-center">
                             MAX PÉRIODE
                           </th>
-                          <th colSpan={3} className="py-1 border-r border-black bg-sky-50 text-sky-950 uppercase tracking-wider text-[8px] font-black">
+                          <th colSpan={4} className="py-1 border-r border-black bg-sky-50 text-sky-950 uppercase tracking-wider text-[8px] font-black">
                             1er SEMESTRE (Points Obtenus)
                           </th>
-                          <th colSpan={3} className="py-1 border-r border-black bg-red-50 text-red-950 uppercase tracking-wider text-[8px] font-black">
+                          <th colSpan={4} className="py-1 border-r border-black bg-red-50 text-red-950 uppercase tracking-wider text-[8px] font-black">
                             2ème SEMESTRE (Points Obtenus)
                           </th>
                           <th rowSpan={2} className="py-2 px-0.5 bg-amber-200 text-slate-950 font-black border-r border-black text-[9px] w-14">
@@ -2245,12 +2320,14 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
                         <tr className="border-b border-black divide-x divide-black text-[8px] font-mono bg-slate-105 text-center">
                           <th className="py-1 bg-sky-50/40">1ère P.</th>
                           <th className="py-1 bg-sky-50/40">2ème P.</th>
-                          <th className="py-1 bg-sky-100/60 font-black text-sky-900 border-r border-black">EXAM 1</th>
+                          <th className="py-1 bg-sky-100/60 font-black text-sky-900">EXAM 1</th>
+                          <th className="py-1 bg-sky-200 font-extrabold text-blue-900 border-r border-black">TOT. S1</th>
                           <th className="py-1 bg-red-50/40">3ème P.</th>
                           <th className="py-1 bg-red-50/40">4ème P.</th>
-                          <th className="py-1 bg-red-100/60 font-black text-rose-900 border-r border-black">EXAM 2</th>
-                          <th className="py-1 bg-slate-100 text-[7px] font-serif font-semibold">%</th>
-                          <th className="py-1 bg-slate-100 text-[6.5px] font-serif font-semibold">SIGN.</th>
+                          <th className="py-1 bg-red-100/60 font-black text-rose-900">EXAM 2</th>
+                          <th className="py-1 bg-red-200 font-extrabold text-red-900 border-r border-black">TOT. S2</th>
+                          <th className="py-1 bg-slate-100 text-[7px] font-semibold">PTS.</th>
+                          <th className="py-1 bg-slate-100 text-[6.5px] font-semibold">SIGN.</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-black">
@@ -2264,6 +2341,7 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
                                 <td className="py-1 px-2 text-left uppercase tracking-widest font-black text-slate-800">
                                   MAXIMA
                                 </td>
+                                <td className="py-1 font-mono font-bold">{maxVal}</td>
                                 <td className="py-1 font-mono font-bold">{maxVal}</td>
                                 <td className="py-1 font-mono font-bold">{maxVal}</td>
                                 <td className="py-1 font-mono bg-sky-100/50 text-sky-950">{getCourseExamMax('', maxVal) || ''}</td>
@@ -2296,6 +2374,7 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
                                     <td className="py-1.5 px-2 text-left font-sans font-extrabold border-r border-black uppercase text-slate-950">
                                       {g.courseName}
                                     </td>
+                                    <td className="py-1.5 font-mono font-semibold text-slate-500 bg-slate-50/50">{g.maxPoints}</td>
                                     <td className="py-1.5 font-mono font-medium">{g.obtainedFirstPeriod}</td>
                                     <td className="py-1.5 font-mono font-medium">{g.obtainedSecondPeriod}</td>
                                     <td className={`py-1.5 font-mono font-bold ${isPrat ? 'bg-slate-200/50 text-slate-450' : 'bg-slate-50'}`}>
@@ -2311,9 +2390,13 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
                                     <td className={`py-1.5 font-mono font-black border-r border-black text-[9.5px] ${isPassing ? 'bg-emerald-50 text-emerald-950 font-bold' : 'bg-red-50 text-red-950 font-bold'}`}>
                                       {tgTotal}
                                     </td>
-                                    {/* Exam repechage blank placeholders */}
-                                    <td className="py-1.5 bg-slate-50"></td>
-                                    <td className="py-1.5 bg-slate-50"></td>
+                                    {/* Exam repechage points and signature Prof */}
+                                    <td className="py-1.5 bg-amber-50/40 font-mono font-bold text-slate-900 text-center">
+                                      {g.repechageGrade !== undefined ? g.repechageGrade : '—'}
+                                    </td>
+                                    <td className="py-1.5 bg-slate-50 font-sans text-[7.5px] text-slate-550 text-center font-semibold">
+                                      {g.repechageGrade !== undefined ? 'Prof/Ok' : '—'}
+                                    </td>
                                   </tr>
                                 );
                               })}
@@ -2324,14 +2407,15 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
                         {/* Overall MAXIMA GENERAUX row */}
                         <tr className="bg-slate-300 text-black font-black text-center text-[9.5px] border-t-2 border-b border-black divide-x divide-black">
                           <td className="py-1.5 px-2 text-left uppercase font-black">MAXIMA GENERAUX</td>
+                          <td className="py-1.5 font-mono text-slate-600 bg-slate-100">{totMaxP1}</td>
                           <td className="py-1.5 font-mono">{totMaxP1}</td>
                           <td className="py-1.5 font-mono">{totMaxP2}</td>
                           <td className="py-1.5 font-mono bg-sky-50">{totMaxEx1}</td>
-                          <td className="py-1.5 font-mono bg-sky-100 font-black">{totMaxSem1}</td>
+                          <td className="py-1.5 font-mono bg-sky-100 font-black text-blue-900">{totMaxSem1}</td>
                           <td className="py-1.5 font-mono">{totMaxP3}</td>
                           <td className="py-1.5 font-mono">{totMaxP4}</td>
                           <td className="py-1.5 font-mono bg-red-50">{totMaxEx2}</td>
-                          <td className="py-1.5 font-mono bg-red-100 font-black">{totMaxSem2}</td>
+                          <td className="py-1.5 font-mono bg-red-100 font-black text-rose-900">{totMaxSem2}</td>
                           <td className="py-1.5 font-mono bg-yellow-300 text-slate-900 font-black text-[10px]">
                             {totMaxGeneral}
                           </td>
@@ -2341,6 +2425,7 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
                         {/* Overall TOTAUX OBTENUS row */}
                         <tr className="bg-slate-205 text-black font-black text-center text-[10px] border-b border-black divide-x divide-black">
                           <td className="py-1.5 px-2 text-left uppercase font-extrabold text-slate-800">TOTAUX OBTENUS</td>
+                          <td className="py-1.5 font-mono text-slate-500 bg-slate-100">—</td>
                           <td className="py-1.5 font-mono">{totObtP1}</td>
                           <td className="py-1.5 font-mono">{totObtP2}</td>
                           <td className="py-1.5 font-mono bg-slate-50">{totObtEx1}</td>
@@ -2358,6 +2443,7 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
                         {/* COLUMN PERCENTAGES row */}
                         <tr className="bg-blue-900 text-white font-black text-center text-[8.5px] border-b border-black divide-x divide-blue-800">
                           <td className="py-1.5 px-2 text-left uppercase font-black text-yellow-300">POURCENTAGE SCOLAIRE</td>
+                          <td className="py-1.5 font-mono text-slate-350 bg-blue-950">—</td>
                           <td className="py-1.5 font-mono">{percentP1}%</td>
                           <td className="py-1.5 font-mono">{percentP2}%</td>
                           <td className="py-1.5 font-mono">{percentEx1}%</td>
@@ -2375,7 +2461,7 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
                         {/* PLACE/NBRE ELEV row */}
                         <tr className="bg-slate-50 text-black font-semibold text-center text-[9px] border-b border-black divide-x divide-black">
                           <td className="py-1 px-2 text-left uppercase font-bold text-slate-700">PLACE/NBRE ELEV</td>
-                          <td colSpan={4} className="py-1 text-black font-bold text-left pl-2">PLACE: {metrics.rankText}</td>
+                          <td colSpan={5} className="py-1 text-black font-bold text-left pl-2">PLACE: {metrics.rankText}</td>
                           <td colSpan={4} className="py-1 text-black font-mono text-left pl-2">INSCRITS: {peerBulletins.length} élève(s)</td>
                           <td className="py-1 bg-yellow-100 font-black text-[10px]">{metrics.rank}</td>
                           <td colSpan={2} className="bg-slate-200"></td>
@@ -2384,7 +2470,7 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
                         {/* APPLICATION row */}
                         <tr className="bg-white text-black font-semibold text-center text-[9px] border-b border-black divide-x divide-black">
                           <td className="py-1 px-2 text-left uppercase font-bold text-slate-700">APPLICATION</td>
-                          <td colSpan={4} className="py-1 text-left pl-2 font-mono">ASSIDU AUTOMATIQUE</td>
+                          <td colSpan={5} className="py-1 text-left pl-2 font-mono">ASSIDU AUTOMATIQUE</td>
                           <td colSpan={4} className="py-1 text-left pl-2 font-mono">EXCELLENTE PERFORMANCE</td>
                           <td className="py-1 font-bold">E</td>
                           <td colSpan={2} className="bg-slate-200"></td>
@@ -2393,16 +2479,16 @@ export const BulletinsPanel: React.FC<BulletinsPanelProps> = ({
                         {/* CONDUITE row */}
                         <tr className="bg-slate-50 text-black font-semibold text-center text-[9px] border-b border-black divide-x divide-black">
                           <td className="py-1 px-2 text-left uppercase font-bold text-slate-700">CONDUITE</td>
-                          <td colSpan={4} className="py-1 text-left pl-2 font-bold text-emerald-800">{activeBulletin.conduct.toUpperCase()}</td>
+                          <td colSpan={5} className="py-1 text-left pl-2 font-bold text-emerald-800">{activeBulletin.conduct.toUpperCase()}</td>
                           <td colSpan={4} className="py-1 text-left pl-2 text-red-700 font-mono">Absence Injustifiée: {activeBulletin.daysAbsent} jours</td>
-                          <td className="py-1 font-mono font-bold text-emerald-800">{activeBulletin.conduct === 'Très Bonne' ? 'TB' : 'B'}</td>
+                          <td className="py-1 font-mono font-bold text-emerald-800">{activeBulletin.conduct === 'Très Bonne' || activeBulletin.conduct === 'Excellente' ? 'TB' : 'B'}</td>
                           <td colSpan={2} className="bg-slate-200"></td>
                         </tr>
 
                         {/* SIGNATURES RESPONSABLES row */}
                         <tr className="bg-white text-black font-semibold text-center text-[9px] divide-x divide-black">
                           <td className="py-1 px-2 text-left uppercase font-bold text-slate-700">SIGN. RESPONSABLE</td>
-                          <td colSpan={4} className="py-1 text-slate-400 italic">Signature oblig.</td>
+                          <td colSpan={5} className="py-1 text-slate-400 italic">Signature oblig.</td>
                           <td colSpan={4} className="py-1 text-slate-400 italic">Visé Nationalement</td>
                           <td className="py-1"></td>
                           <td colSpan={2} className="bg-slate-200"></td>
